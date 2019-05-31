@@ -12,7 +12,8 @@ consts.noisestd = 0.3 # noise added to data
 
 
 # data generating function
-f = lambda x: 2*x + np.sin(5*x)
+# f = lambda x: 2*x + np.sin(5*x)
+f = lambda x: 5 * np.exp(-0.5 * x**2 / 1.3**2)
 # convert numpy
 
 # load or generate training data
