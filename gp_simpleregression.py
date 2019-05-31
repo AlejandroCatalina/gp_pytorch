@@ -24,6 +24,22 @@ y_noisy = y + np.random.normal(0, consts.noisestd) # noisy target
 x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((1,-1, 1)) # test data
 kernel  = SquaredExp() # kernel 
 
-model = GPR(x, y, kernel)
-model.train()
+model = GPR(kernel)
+
+def train(module, X, y, n_iters=1000):
+    # optimize log marginal likelihood
+    opt = torch.optim.Adam(module.parameters(), lr=1e-4)
+
+    # training loop
+    for iter in range(n_iters):
+        opt.zero_grad()
+        nmll = module(X, y)
+        nmll.backward()
+        opt.step()
+        print(f"Iter {iter} , Log marginal likelihood : {-nmll} ")
+        print(f"Kernel lengthscale {model.kernel.lengthscale}")
+        print(f"Kernel prefactor {model.kernel.prefactor}")
+        print(f"Noise std {model.noise_std}")
+
+train(model, x, y)
 posterior_mean, posterior_var = model.predict(x_test)
