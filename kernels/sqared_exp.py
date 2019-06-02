@@ -3,12 +3,17 @@ import torch.nn as nn
 import numpy as np
 import pdb
 
+uniform_ = torch.nn.init.uniform_
+
 class SquaredExp(nn.Module):
     def __init__(self):
         super(SquaredExp, self).__init__()
+        # self.lengthscale = nn.Parameter(torch.nn.init.normal_(torch.empty(1,1)))
+        # self.prefactor = nn.Parameter(torch.nn.init.normal_(torch.empty(1,1)))
+
         # TODO: positive arguments
-        self.lengthscale = nn.Parameter(torch.nn.init.normal_(torch.empty(1,1)))
-        self.prefactor = nn.Parameter(torch.nn.init.normal_(torch.empty(1,1)))
+        self.lengthscale = nn.Parameter(torch.exp(uniform_(torch.empty(1, 1), -3., 0.)))
+        self.prefactor = nn.Parameter(torch.exp(uniform_(torch.empty(1, 1), -3., 0.)))
         # print(f"lengthscale = {self.lengthscale.shape}")
         # self.pdist = nn.PairwiseDistance(p=2)
 

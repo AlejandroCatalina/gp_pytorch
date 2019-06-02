@@ -26,9 +26,9 @@ kernel  = SquaredExp() # kernel
 
 model = GPR(kernel)
 
-def train(module, X, y, n_iters=1000):
+def train(module, X, y, n_iters=5000):
     # optimize log marginal likelihood
-    opt = torch.optim.Adam(module.parameters(), lr=1e-4)
+    opt = torch.optim.Adam(module.parameters(), lr=1e-3)
 
     # training loop
     for iter in range(n_iters):
@@ -36,10 +36,10 @@ def train(module, X, y, n_iters=1000):
         nmll = module(X, y)
         nmll.backward()
         opt.step()
-        print(f"Iter {iter} , Log marginal likelihood : {-nmll} ")
-        print(f"Kernel lengthscale {model.kernel.lengthscale}")
-        print(f"Kernel prefactor {model.kernel.prefactor}")
-        print(f"Noise std {model.noise_std}")
+        print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()} ")
+        print(f"Kernel lengthscale {model.kernel.lengthscale.item()}")
+        print(f"Kernel prefactor {model.kernel.prefactor.item()}")
+        print(f"Noise std {model.noise_std.item()}")
 
 train(model, x, y)
 posterior_mean, posterior_var = model.predict(x_test)
