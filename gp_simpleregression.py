@@ -3,10 +3,11 @@ from collections import namedtuple
 from models import GPR
 from kernels import SquaredExp
 import numpy as np
+from visualize import visualize1d as visualize
 
-# define the constants 
+# define the constants
 consts = namedtuple("consts", "Ntrain Ntest noisestd")
-consts.Ntrain = 500 # 500 training points 
+consts.Ntrain = 500 # 500 training points
 consts.Ntest  = 500 # 5 test points
 consts.noisestd = 0.3 # noise added to data
 
@@ -21,12 +22,12 @@ x = torch.linspace(-5, 5, consts.Ntrain).reshape((-1, 1, 1))
 y = f(x)
 
 y_noisy = y + np.random.normal(0, consts.noisestd) # noisy target
-x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((1,-1, 1)) # test data
-kernel  = SquaredExp() # kernel 
+x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((-1, 1, 1)) # test data
+kernel  = SquaredExp() # kernel
 
 model = GPR(kernel)
 
-def train(module, X, y, n_iters=5000):
+def train(module, X, y, n_iters=50):
     # optimize log marginal likelihood
     opt = torch.optim.Adam(module.parameters(), lr=1e-3)
 
@@ -43,3 +44,5 @@ def train(module, X, y, n_iters=5000):
 
 train(model, x, y)
 posterior_mean, posterior_var = model.predict(x_test)
+
+visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var) # x , true function, noisy function, x_test, prediction_mean, pred_var, filename
