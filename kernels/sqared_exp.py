@@ -1,9 +1,10 @@
-import torch
-import torch.nn as nn
-import numpy as np
 import pdb
 
-uniform_ = torch.nn.init.uniform_
+import numpy as np
+import torch
+import torch.nn as nn
+from torch.nn.init import uniform_
+
 
 class SquaredExp(nn.Module):
     def __init__(self):
