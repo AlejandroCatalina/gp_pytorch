@@ -4,9 +4,9 @@ from models import GPR
 from kernels import SquaredExp
 import numpy as np
 
-# define the constants 
+# define the constants
 consts = namedtuple("consts", "Ntrain Ntest noisestd")
-consts.Ntrain = 500 # 500 training points 
+consts.Ntrain = 500 # 500 training points
 consts.Ntest  = 500 # 5 test points
 consts.noisestd = 0.3 # noise added to data
 
@@ -22,7 +22,7 @@ y = f(x)
 
 y_noisy = y + np.random.normal(0, consts.noisestd) # noisy target
 x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((1,-1, 1)) # test data
-kernel  = SquaredExp() # kernel 
+kernel  = SquaredExp() # kernel
 
 model = GPR(kernel)
 
