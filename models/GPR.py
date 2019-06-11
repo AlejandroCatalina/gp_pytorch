@@ -12,10 +12,9 @@ class GPR(nn.Module):
     def __init__(self, X, y, kernel):
         super(GPR, self).__init__()
         self.kernel = kernel
-        self.X, self.y = X, y
+        N = X.shape[0]
+        self.X, self.y = X.reshape(N, -1), y.reshape(-1, 1)
         self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(1, 1), -3., 0.)))
-        self.X_train = None
-        self.y_train = None
 
     def forward(self):
         x, y = self.X, self.y
@@ -26,7 +25,7 @@ class GPR(nn.Module):
     def log_marginal_likelihood(self, K, y):
         n = K.shape[0]
         L = torch.cholesky(K + self.noise_std**2 * torch.eye(n))
-        a, _      = torch.solve(y.squeeze(-1), L.transpose(-1, 0))
+        a, _      = torch.solve(y, L.transpose(-1, 0))
         alpha, _  = torch.solve(a, L.transpose(-1, 0))
         return -0.5 * y.transpose(-1, 0) @ alpha \
             - torch.sum(torch.diag(L.squeeze())) \
@@ -35,7 +34,11 @@ class GPR(nn.Module):
     def predict(self, x_test, full_cov = True):
         x, y = self.X, self.y
         N, D = x.shape
-        Ntest, _ = x_test.shape
+        N_test = x_test.shape[0]
+
+        if len(x_test.shape) > 2:
+            x_test = x_test.reshape(N_test, -1)
+
         Kxx = self.kernel(x, x) + 1e-3 * torch.eye(N)
         Kxx_inv = (Kxx + self.noise_std * torch.eye(N)).inverse()
         Ks = self.kernel(x, x_test)
