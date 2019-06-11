@@ -3,6 +3,7 @@ from collections import namedtuple
 from models import GPR
 from kernels import SquaredExp
 import numpy as np
+from visualize import visualize1d as visualize
 
 # define the constants
 consts = namedtuple("consts", "Ntrain Ntest noisestd")
@@ -21,14 +22,14 @@ x = torch.linspace(-5, 5, consts.Ntrain).reshape((-1, 1, 1))
 y = f(x)
 
 y_noisy = y + np.random.normal(0, consts.noisestd) # noisy target
-x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((1,-1, 1)) # test data
+x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((-1, 1, 1)) # test data
 kernel  = SquaredExp() # kernel
 
 model = GPR(kernel)
 
-def train(module, X, y, n_iters=1000):
+def train(module, X, y, n_iters=50):
     # optimize log marginal likelihood
-    opt = torch.optim.Adam(module.parameters(), lr=1e-4)
+    opt = torch.optim.Adam(module.parameters(), lr=1e-3)
 
     # training loop
     for iter in range(n_iters):
@@ -36,10 +37,12 @@ def train(module, X, y, n_iters=1000):
         nmll = module(X, y)
         nmll.backward()
         opt.step()
-        print(f"Iter {iter} , Log marginal likelihood : {-nmll} ")
-        print(f"Kernel lengthscale {model.kernel.lengthscale}")
-        print(f"Kernel prefactor {model.kernel.prefactor}")
-        print(f"Noise std {model.noise_std}")
+        print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()} ")
+        print(f"Kernel lengthscale {model.kernel.lengthscale.item()}")
+        print(f"Kernel prefactor {model.kernel.prefactor.item()}")
+        print(f"Noise std {model.noise_std.item()}")
 
 train(model, x, y)
 posterior_mean, posterior_var = model.predict(x_test)
+
+visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var) # x , true function, noisy function, x_test, prediction_mean, pred_var, filename

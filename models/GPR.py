@@ -14,6 +14,8 @@ class GPR(nn.Module):
         self.kernel = kernel
         self.X, self.y = X, y
         self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(1, 1), -3., 0.)))
+        self.X_train = None
+        self.y_train = None
 
     def forward(self):
         x, y = self.X, self.y

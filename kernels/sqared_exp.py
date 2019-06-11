@@ -6,6 +6,8 @@ import torch.nn as nn
 from torch.nn.init import uniform_
 
 
+uniform_ = torch.nn.init.uniform_
+
 class SquaredExp(nn.Module):
     def __init__(self):
         super(SquaredExp, self).__init__()
