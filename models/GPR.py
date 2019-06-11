@@ -5,16 +5,18 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch import distributions as dist
-from torch.nn.init import uniform_
+from torch.nn.init import uniform_, normal_
 
 
 class GPR(nn.Module):
-    def __init__(self, kernel):
+    def __init__(self, X, y, kernel):
         super(GPR, self).__init__()
         self.kernel = kernel
+        self.X, self.y = X, y
         self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(1, 1), -3., 0.)))
 
-    def forward(self, x, y):
+    def forward(self):
+        x, y = self.X, self.y
         Kxx = self.kernel(x, x) + 1e-3 * torch.eye(x.shape[0])
         nmll = -self.log_marginal_likelihood(Kxx, y)
         return nmll
@@ -28,8 +30,9 @@ class GPR(nn.Module):
             - torch.sum(torch.diag(L.squeeze())) \
             - 0.5*n*torch.log(2*torch.tensor(math.pi))
 
-    def predict(self, x_test, x, y, full_cov = True):
-        N, M = x.shape
+    def predict(self, x_test, full_cov = True):
+        x, y = self.X, self.y
+        N, D = x.shape
         Ntest, _ = x_test.shape
         Kxx = self.kernel(x, x) + 1e-3 * torch.eye(N)
         Kxx_inv = (Kxx + self.noise_std * torch.eye(N)).inverse()
@@ -42,3 +45,16 @@ class GPR(nn.Module):
         if not full_cov:
             k_pred = k_pred.diag().sqrt()
         return m_pred, k_pred
+
+class SGPR(GPR):
+    def __init__(self, X, y, kernel, M = 100):
+        super(SGPR, self).__init__(X, y, kernel)
+        self.M = M
+        N, D = X.shape
+        self.Z = nn.Parameter(normal_(torch.empty(M, D)))
+
+    def forward(self):
+        pass
+
+    def log_marginal_likelihood(self, K, y):
+        pass
