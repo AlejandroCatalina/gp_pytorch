@@ -13,7 +13,7 @@ class GPR(nn.Module):
         self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(1, 1), -3., 0.)))
 
     def forward(self, x, y):
-        Kxx = self.kernel(x, x)
+        Kxx = self.kernel(x, x) + 1e-3 * torch.eye(x.shape[0])
         nmll = -self.log_marginal_likelihood(Kxx, y)
         return nmll
 
