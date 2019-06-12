@@ -1,6 +1,6 @@
 import torch
 from collections import namedtuple
-from models import GPR
+from models import GPR, SGPR
 from kernels import SquaredExp
 import numpy as np
 from visualize import visualize1d as visualize
