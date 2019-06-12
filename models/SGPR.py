@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import torch
 import torch.nn as nn
 from torch.nn.init import normal_, uniform_
@@ -29,12 +30,11 @@ class SGPR(GPR):
         M = self.M
 
         ## L is the cholesky decomposition of the covariance matrix of q
-        L_inv = L.inv()
+        L_inv = L.inverse()
         S_q_inv = L_inv.t() @ L_inv
-        S_q_det = L.det() ** 2
         S_q = L @ L.t()
 
-        log_ratio_det = torch.log(S_p.det() / S_q_det) - M
+        log_ratio_det = torch.trace(S_p) - 2 * torch.trace(L) - M
         trace = torch.trace(S_p.inverse() @ S_q)
         mu = (m_p - m_q).t() @ S_p.inverse() @ (m_p - m_q)
         return 0.5 * (log_ratio_det + trace + mu)
@@ -66,5 +66,22 @@ class SGPR(GPR):
             - 0.5 * N * torch.log(2 * torch.tensor(math.pi)) \
             - kl_q_u_p_u
 
-    def predict(self, x_test):
-        raise NotImplementedError
+    def predict(self, x_test, full_cov = True):
+        Ntest, D = x_test.shape
+        M = self.M
+        x, y, z = self.X, self.y, self.Z
+        Kss = self.kernel(x_test, x_test) + (1e-3 * torch.eye(Ntest))
+        Ksm = self.kernel(x_test, z)
+        Kmm = self.kernel(z, z) + (1e-1 * torch.eye(M))
+        Kmm_inv = Kmm.inverse()
+        S = self.L @ self.L.t()
+
+        As = Ksm @ Kmm_inv
+
+        mu = As @ self.m
+        cov = Kss + As @ (S - Kmm) @ As.t() + self.noise_std ** 2 * torch.eye(Ntest)
+
+        if not full_cov:
+            cov = torch.diag(cov).sqrt()
+
+        return mu, cov
