@@ -1,6 +1,6 @@
 import torch
 from collections import namedtuple
-from models import GPR
+from models import GPR, SGPR
 from kernels import SquaredExp
 import numpy as np
 from visualize import visualize1d as visualize
@@ -26,16 +26,16 @@ y_noisy = y + torch.randn((consts.Ntrain,1)) * consts.noisestd #np.random.normal
 x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((-1, 1)) # test data
 kernel  = SquaredExp() # kernel
 
-model = GPR(kernel)
+model = GPR(x, y, kernel)
 
-def train(module, X, y_noisy, n_iters=500):
+def train(module, n_iters=50):
     # optimize log marginal likelihood
     opt = torch.optim.Adam(module.parameters(), lr=1e-3)
 
     # training loop
     for iter in range(n_iters):
         opt.zero_grad()
-        nmll = module(X, y)
+        nmll = module()
         nmll.backward()
         opt.step()
         print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()} ")
@@ -43,6 +43,6 @@ def train(module, X, y_noisy, n_iters=500):
         print(f"Kernel prefactor {model.kernel.prefactor.item()}")
         print(f"Noise std {model.noise_std.item()}")
 
-train(model, x, y)
+train(model)
 posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
 visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, "GP-exact.pdf") # x , true function, noisy function, x_test, prediction_mean, pred_var, filename

@@ -4,21 +4,19 @@ import pdb
 import numpy as np
 import torch
 import torch.nn as nn
-from torch import distributions as dist
-from torch.nn.init import uniform_
+from torch.nn.init import uniform_, normal_
 
 
 class GPR(nn.Module):
-    def __init__(self, kernel):
+    def __init__(self, X, y, kernel):
         super(GPR, self).__init__()
         self.kernel = kernel
+        N = X.shape[0]
+        self.X, self.y = X.reshape(N, -1), y.reshape(-1, 1)
         self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(1, 1), -3., 0.)))
-        self.X_train = None
-        self.y_train = None
 
-    def forward(self, x, y):
-        self.X_train = x
-        self.y_train = y
+    def forward(self):
+        x, y = self.X, self.y
         Kxx = self.kernel(x, x) + 1e-3 * torch.eye(x.shape[0])
         nmll = -self.log_marginal_likelihood(Kxx, y)
         return nmll
@@ -34,8 +32,12 @@ class GPR(nn.Module):
             - 0.5*n*torch.log(2*torch.tensor(math.pi))
 
     def predict(self, x_test, full_cov = True):
-        x = self.X_train
-        y = self.y_train
+        x, y = self.X, self.y
+        N, D = x.shape
+        N_test = x_test.shape[0]
+
+        if len(x_test.shape) > 2:
+            x_test = x_test.reshape(N_test, -1)
 
         N, M      = x.shape
         N_test, _ = x_test.shape
