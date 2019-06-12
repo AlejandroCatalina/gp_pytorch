@@ -13,7 +13,7 @@ class SGPR(GPR):
         self.N, D = X.shape
         self.Z = nn.Parameter(normal_(torch.empty(M, D)))
         self.m = nn.Parameter(normal_(torch.empty(M, D)))
-        self.S = nn.Parameter(torch.exp(uniform_(torch.empty(1), -3, 0)) * torch.eye(M))
+        self.L = nn.Parameter((torch.exp(uniform_(torch.empty(1), -3, 0)) * torch.eye(M)).tril())
 
     def forward(self):
         N, M = self.N, self.M
@@ -25,31 +25,43 @@ class SGPR(GPR):
         elbo = -self.elbo(Knn, Knm, Kmm, Qnn, y)
         return elbo
 
-    def kl(self, m_q, S_q, m_p, S_p):
+    def kl(self, m_q, L, m_p, S_p):
         M = self.M
-        log_ratio_det = torch.log(S_p.det() / S_q.det()) - M
+
+        ## L is the cholesky decomposition of the covariance matrix of q
+        L_inv = L.inv()
+        S_q_inv = L_inv.t() @ L_inv
+        S_q_det = L.det() ** 2
+        S_q = L @ L.t()
+
+        log_ratio_det = torch.log(S_p.det() / S_q_det) - M
         trace = torch.trace(S_p.inverse() @ S_q)
         mu = (m_p - m_q).t() @ S_p.inverse() @ (m_p - m_q)
         return 0.5 * (log_ratio_det + trace + mu)
 
     def elbo(self, Knn, Knm, Kmm, Qnn, y):
         """Implement variational ELBO as in
-        Hensman et al, Scalable Variational Gaussian Process Classification, ICML 2015.
+        J. Hensman, N. Fusi, and N. D. Lawrence. Gaussian processes for big data.
+          In A. Nicholson and P. Smyth, editors, Uncertainty in Artificial Intelligence, volume 29. AUAI Press, 2013.
+        J. Hensman, A. G.G. Mathews and Z. Ghahramani. Scalable Variational Gaussian Process Classification.
+          In Proceedings of the 18th International Conference on Artificial Intelligence and Statistics (AISTATS) 2015,
+          San Diego, CA, USA. JMLR: W&CP volume 38.
         """
         N = self.N
         Kmm_inv = Kmm.inverse()
         Knm_Kmm_inv = Knm @ Kmm_inv
         m = Knm_Kmm_inv @ self.m
         S = self.noise_std**2 * torch.eye(N)
+        LL = self.L @ self.L.t()
 
         ## compute KL[q_u || p_u], with p_u = N(0, I) and q_u = N(m, S)
-        kl_q_u_p_u = self.kl(self.m, self.S, torch.zeros_like(self.m), torch.eye(self.M))
+        kl_q_u_p_u = self.kl(self.m, self.L, torch.zeros_like(self.m), torch.eye(self.M))
 
         ## return elbo
         ## TODO: rewrite with cholesky decomposition
         return - 0.5 * (y - m).t() @ S.inverse() @ (y - m) \
             - 1. / (2 * self.noise_std**2) \
-            * torch.sum(torch.diag(Knm_Kmm_inv @ self.S @ Kmm_inv @ Knm.t())) \
+            * torch.sum(torch.diag(Knm_Kmm_inv @ LL @ Kmm_inv @ Knm.t())) \
             - 1. / (2 * self.noise_std**2) * torch.sum(torch.diag(Knn - Qnn)) \
             - 0.5 * N * torch.log(2 * torch.tensor(math.pi)) \
             - kl_q_u_p_u
