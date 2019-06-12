@@ -26,26 +26,27 @@ class GPR(nn.Module):
     def log_marginal_likelihood(self, K, y):
         n = K.shape[0]
         L = torch.cholesky(K + self.noise_std**2 * torch.eye(n))
-        a, _      = torch.solve(y.squeeze(-1), L.transpose(-1, 0))
-        alpha, _  = torch.solve(a, L.transpose(-1, 0))
-        return -0.5 * y.transpose(-1, 0) @ alpha \
-            - torch.sum(torch.diag(L.squeeze())) \
+        a, _     = torch.solve(y.unsqueeze(0), L.unsqueeze(0))
+        alpha, _ = torch.solve(a, L.unsqueeze(0))
+        alpha = alpha.squeeze(0)
+        return -0.5 * y.t() @ alpha \
+            - torch.sum(torch.diag(L)) \
             - 0.5*n*torch.log(2*torch.tensor(math.pi))
 
     def predict(self, x_test, full_cov = True):
         x = self.X_train
         y = self.y_train
 
-        N, M, _ = x.shape
-        print(x_test.shape)
-        Ntest, _, _ = x_test.shape
+        N, M      = x.shape
+        N_test, _ = x_test.shape
+
         Kxx = self.kernel(x, x) + 1e-3 * torch.eye(N)
         Kxx_inv = (Kxx + self.noise_std * torch.eye(N)).inverse()
         Ks = self.kernel(x, x_test)
         Kss = self.kernel(x_test, x_test)
 
         m_pred = Ks.t() @ Kxx_inv @ y
-        k_pred = (Kss + self.noise_std * torch.eye(N_test)
+        k_pred = (Kss + self.noise_std * torch.eye(N_test) \
                   - Ks.t() @ Kxx_inv @ Ks)
         if not full_cov:
             k_pred = k_pred.diag().sqrt()

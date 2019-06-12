@@ -18,16 +18,17 @@ f = lambda x: 5 * np.exp(-0.5 * x**2 / 1.3**2)
 # convert numpy
 
 # load or generate training data
-x = torch.linspace(-5, 5, consts.Ntrain).reshape((-1, 1, 1))
+x = torch.linspace(-5, 5, consts.Ntrain).reshape((-1, 1))
 y = f(x)
 
-y_noisy = y + np.random.normal(0, consts.noisestd) # noisy target
-x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((-1, 1, 1)) # test data
+print(y.shape)
+y_noisy = y + torch.randn((consts.Ntrain,1)) * consts.noisestd #np.random.normal(0, consts.noisestd, consts.Ntrain) # noisy target
+x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((-1, 1)) # test data
 kernel  = SquaredExp() # kernel
 
 model = GPR(kernel)
 
-def train(module, X, y, n_iters=50):
+def train(module, X, y_noisy, n_iters=500):
     # optimize log marginal likelihood
     opt = torch.optim.Adam(module.parameters(), lr=1e-3)
 
@@ -43,6 +44,5 @@ def train(module, X, y, n_iters=50):
         print(f"Noise std {model.noise_std.item()}")
 
 train(model, x, y)
-posterior_mean, posterior_var = model.predict(x_test)
-
-visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var) # x , true function, noisy function, x_test, prediction_mean, pred_var, filename
+posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
+visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, "GP-exact.pdf") # x , true function, noisy function, x_test, prediction_mean, pred_var, filename
