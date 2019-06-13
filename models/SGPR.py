@@ -8,13 +8,15 @@ from .GPR import GPR
 
 
 class SGPR(GPR):
-    def __init__(self, X, y, kernel, M = 100):
+    def __init__(self, X, y, Z, kernel):
         super(SGPR, self).__init__(X, y, kernel)
-        self.M = M
+        self.M, d = Z.shape
         self.N, D = X.shape
-        self.Z = nn.Parameter(normal_(torch.empty(M, D)))
-        self.m = nn.Parameter(normal_(torch.empty(M, D)))
-        self.L = nn.Parameter((torch.exp(uniform_(torch.empty(1), -3, 0)) * torch.eye(M)).tril())
+        assert d == D, "Dimension of Z must be equal to dimension of X"
+
+        self.Z = nn.Parameter(Z)
+        self.m = nn.Parameter(normal_(torch.empty(self.M, D)))
+        self.L = nn.Parameter((torch.exp(uniform_(torch.empty(1), -3, 0)) * torch.eye(self.M)).tril())
 
     def forward(self):
         N, M = self.N, self.M
@@ -79,7 +81,7 @@ class SGPR(GPR):
         As = Ksm @ Kmm_inv
 
         mu = As @ self.m
-        cov = Kss + As @ (S - Kmm) @ As.t() + self.noise_std ** 2 * torch.eye(Ntest)
+        cov = Kss + As @ (S - Kmm) @ As.t()
 
         if not full_cov:
             cov = torch.diag(cov).sqrt()
