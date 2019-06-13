@@ -18,6 +18,7 @@ f = lambda x: 5 * np.exp(-0.5 * x**2 / 1.3**2)
 # convert numpy
 
 # load or generate training data
+z = torch.linspace(-5, 5, 20).reshape((-1, 1))
 x = torch.linspace(-5, 5, consts.Ntrain).reshape((-1, 1))
 y = f(x)
 
@@ -26,11 +27,11 @@ y_noisy = y + torch.randn((consts.Ntrain,1)) * consts.noisestd #np.random.normal
 x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((-1, 1)) # test data
 kernel  = SquaredExp() # kernel
 
-model = GPR(x, y, kernel)
+model = SGPR(x, y, z, kernel)
 
-def train(module, n_iters=50):
+def train(module, n_iters=50, lr = 1e-3):
     # optimize log marginal likelihood
-    opt = torch.optim.Adam(module.parameters(), lr=1e-3)
+    opt = torch.optim.Adam(module.parameters(), lr=lr)
 
     # training loop
     for iter in range(n_iters):
@@ -43,6 +44,6 @@ def train(module, n_iters=50):
         print(f"Kernel prefactor {model.kernel.prefactor.item()}")
         print(f"Noise std {model.noise_std.item()}")
 
-train(model)
+train(model, n_iters = 1000)
 posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
-visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, "GP-exact.pdf") # x , true function, noisy function, x_test, prediction_mean, pred_var, filename
+visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, "GP-sparse.pdf") # x , true function, noisy function, x_test, prediction_mean, pred_var, filename
