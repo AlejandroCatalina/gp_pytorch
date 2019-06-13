@@ -15,7 +15,7 @@ class SquaredExp(nn.Module):
         self.prefactor = nn.Parameter(torch.exp(uniform_(torch.empty(1, 1), -1, 1)))
 
     def forward(self, X1, X2):
-        l2      = (X1 - X2.transpose(-1, 0))**2
+        l2      = (X1 - X2.transpose(1, 2))**2
         pref_sq = self.prefactor**2
         ls_sq   = self.lengthscale**2
         l2      = l2.transpose(1, -1)
