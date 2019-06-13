@@ -52,8 +52,10 @@ class SGPR(GPR):
         N = self.N
         Kmm_inv = Kmm.inverse()
         Knm_Kmm_inv = Knm @ Kmm_inv
+
         m = Knm_Kmm_inv @ self.m
         S = self.noise_std**2 * torch.eye(N)
+
         LL = self.L @ self.L.t()
 
         ## compute KL[q_u || p_u], with p_u = N(0, I) and q_u = N(m, S)
@@ -63,8 +65,8 @@ class SGPR(GPR):
         ## TODO: rewrite with cholesky decomposition
         return - 0.5 * (y - m).t() @ S.inverse() @ (y - m) \
             - 1. / (2 * self.noise_std**2) \
-            * torch.sum(torch.diag(Knm_Kmm_inv @ LL @ Kmm_inv @ Knm.t())) \
-            - 1. / (2 * self.noise_std**2) * torch.sum(torch.diag(Knn - Qnn)) \
+            * torch.trace(Knm_Kmm_inv @ LL @ Kmm_inv @ Knm.t()) \
+            - 1. / (2 * self.noise_std**2) * torch.trace(Knn - Qnn) \
             - 0.5 * N * torch.log(2 * torch.tensor(math.pi)) \
             - kl_q_u_p_u
 
@@ -81,7 +83,7 @@ class SGPR(GPR):
         As = Ksm @ Kmm_inv
 
         mu = As @ self.m
-        cov = Kss + As @ (S - Kmm) @ As.t()
+        cov = Kss + As @ (S - Kmm) @ As.t() + self.noise_std ** 2 * torch.eye(Ntest)
 
         if not full_cov:
             cov = torch.diag(cov).sqrt()
