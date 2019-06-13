@@ -1,6 +1,7 @@
 import torch
 from collections import namedtuple
 from models import GPR, SGPR
+from losses import elbo
 from kernels import SquaredExp
 import numpy as np
 from visualize import visualize1d as visualize
@@ -18,25 +19,28 @@ f = lambda x: 5 * np.exp(-0.5 * x**2 / 1.3**2)
 # convert numpy
 
 # load or generate training data
-z = torch.linspace(-5, 5, 20).reshape((-1, 1))
+z = torch.linspace(-5, 5, 20).reshape((1, 20, 1))
 x = torch.linspace(-5, 5, consts.Ntrain).reshape((-1, 1))
 y = f(x)
+
+# standardize input
+x_ = (x - x.mean()) / x.std()
 
 print(y.shape)
 y_noisy = y + torch.randn((consts.Ntrain,1)) * consts.noisestd #np.random.normal(0, consts.noisestd, consts.Ntrain) # noisy target
 x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((-1, 1)) # test data
 kernel  = SquaredExp() # kernel
 
-model = SGPR(x, y, z, kernel)
+model = SGPR(D = 1, M = 20, kernel = kernel, Z = z)
 
-def train(module, n_iters=50, lr = 1e-3):
+def train(module, x, y, n_iters=50, lr = 1e-3):
     # optimize log marginal likelihood
     opt = torch.optim.Adam(module.parameters(), lr=lr)
 
     # training loop
     for iter in range(n_iters):
         opt.zero_grad()
-        nmll = module()
+        nmll = -elbo(model, x, y)
         nmll.backward()
         opt.step()
         print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()} ")
@@ -44,6 +48,6 @@ def train(module, n_iters=50, lr = 1e-3):
         print(f"Kernel prefactor {module.kernel.prefactor.item()}")
         print(f"Noise std {module.noise_std.item()}")
 
-train(model, n_iters = 1000)
+train(model, x, y, n_iters = 50)
 posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
 visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, "GP-sparse.pdf") # x , true function, noisy function, x_test, prediction_mean, pred_var, filename

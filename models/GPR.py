@@ -28,8 +28,9 @@ class GPR(nn.Module):
         return mu, cov
 
     def neg_log_lik(self, X, y):
+        N = X.shape[0]
         mu, cov = self.forward(X, y)
-        S = self.noise_std ** 2 * torch.eye(self.N)
+        S = self.noise_std ** 2 * torch.eye(N)
 
         return (- 0.5 * (y - mu).t() @ S.inverse() @ (y - mu)
                 - 1. / (2 * self.noise_std ** 2) * torch.trace(cov)

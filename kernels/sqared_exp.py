@@ -18,6 +18,5 @@ class SquaredExp(nn.Module):
         l2      = (X1 - X2.transpose(1, 2))**2
         pref_sq = self.prefactor**2
         ls_sq   = self.lengthscale**2
-        l2      = l2.transpose(1, -1)
         kernel  = pref_sq * torch.exp(-0.5 * l2 / ls_sq)
-        return kernel.squeeze()
+        return kernel
