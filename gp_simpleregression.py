@@ -40,9 +40,9 @@ def train(module, n_iters=50, lr = 1e-3):
         nmll.backward()
         opt.step()
         print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()} ")
-        print(f"Kernel lengthscale {model.kernel.lengthscale.item()}")
-        print(f"Kernel prefactor {model.kernel.prefactor.item()}")
-        print(f"Noise std {model.noise_std.item()}")
+        print(f"Kernel lengthscale {module.kernel.lengthscale.item()}")
+        print(f"Kernel prefactor {module.kernel.prefactor.item()}")
+        print(f"Noise std {module.noise_std.item()}")
 
 train(model, n_iters = 1000)
 posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
