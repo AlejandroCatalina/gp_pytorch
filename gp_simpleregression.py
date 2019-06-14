@@ -31,8 +31,8 @@ y_noisy = y + torch.randn((consts.Ntrain,1)) * consts.noisestd #np.random.normal
 x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((-1, 1)) # test data
 x_test_ = (x_test - x.mean()) / x.std()
 
-kernel  = SquaredExp() # kernel
-model = SGPR(D = 1, M = 20, kernel = kernel, Z = z)
+kernel  = SquaredExp(D_out = 1) # kernel
+model = SGPR(D_in = 1, D_out = 1, M = 20, kernel = kernel, Z = z)
 
 def train(module, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plot = False):
     # optimize log marginal likelihood
