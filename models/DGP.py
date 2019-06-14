@@ -4,13 +4,22 @@ from torch import distributions as dist
 
 from .SGPR import SGPR
 
+
 class DGP(nn.Module):
     def __init__(self, D_in, layers_sizes, kernel, M = 10):
         super(DGP, self).__init__()
         self.layers = nn.ModuleList([])
         for D_out in layers_sizes:
-            self.layers.append(SGPR(D_in, M = M, kernel = kernel(), D_out = D_out))
+            self.layers.append(SGPR(D_in, M = M, kernel = kernel(), D_out = D_out,
+                                    mean = lambda X: torch.mean(X, dim = 1, keepdim = True)))
             D_in = D_out
+
+    def __str__(self):
+        layers_sizes = [str(self.layers[0].D_in)]
+        if len(self.layers) > 1:
+            layers_sizes.extend([str(node.D_out) for node in self.layers[1:]])
+        sizes_str = "-".join(layers_sizes)
+        return f"DGP-{sizes_str}"
 
     def forward(self, X, y = None):
         f_l = X.t()
@@ -41,7 +50,7 @@ class DGP(nn.Module):
         noise_std = self.layers[-1].noise_std
         S = noise_std ** 2 * torch.eye(N)
         # this has shape (K)
-        return (- 0.5 * ((y - f_L).transpose(1, 2) @ S.inverse() @ (y - f_L)).squeeze()
+        return 1. / N * (- 0.5 * ((y - f_L).transpose(1, 2) @ S.inverse() @ (y - f_L)).squeeze()
                 - 1. / (2 * noise_std ** 2) * torch.einsum('kii', cov_L)
                 - 0.5 * N * torch.log(2 * torch.tensor(math.pi))).mean()
 
