@@ -12,6 +12,7 @@ class SGPR(GPR):
     def __init__(self, D_in, M = 10, kernel = None, D_out = 1, Z = None, mean = lambda X: 0):
         super(SGPR, self).__init__(D_out = D_out, kernel = kernel)
         self.M, self.D_in = M, D_in
+        self.D_out = D_out
         self.mean = mean
 
         if Z is not None:
@@ -20,7 +21,7 @@ class SGPR(GPR):
         else:
             self.Z = None
         self.m = nn.Parameter(normal_(torch.empty(D_out, self.M, 1)))
-        self.L = nn.Parameter((torch.exp(uniform_(torch.empty(D_out, M, M), -3, 0))).tril())
+        self.L = nn.Parameter(torch.stack([1e-2 * torch.eye(M) for _ in range(self.D_out)]).tril())
 
     def __init_inducing_points__(self, X):
         N, M = X.shape[0], self.M
@@ -52,8 +53,9 @@ class SGPR(GPR):
                    * torch.stack([torch.eye(N) for _ in range(self.D_out)]))
         M_noise = (self.noise_std.unsqueeze(-1) ** 2
                    * torch.stack([torch.eye(M) for _ in range(self.D_out)]))
-        Knn = self.kernel(x, x.unsqueeze(0)) + N_noise
-        Knm = self.kernel(x, z)
+        Knn = self.kernel(x.unsqueeze(0).repeat(self.D_out, 1, 1),
+                          x.unsqueeze(0).repeat(self.D_out, 1, 1)) + N_noise
+        Knm = self.kernel(x.unsqueeze(0).repeat(self.D_out, 1, 1), z)
         Kmm = self.kernel(z, z) + M_noise
         Kmm_inv = Kmm.inverse()
         A = Knm @ Kmm_inv
