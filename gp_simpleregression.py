@@ -29,8 +29,9 @@ x_ = (x - x.mean()) / x.std()
 print(y.shape)
 y_noisy = y + torch.randn((consts.Ntrain,1)) * consts.noisestd #np.random.normal(0, consts.noisestd, consts.Ntrain) # noisy target
 x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((-1, 1)) # test data
-kernel  = SquaredExp() # kernel
+x_test_ = (x_test - x.mean()) / x.std()
 
+kernel  = SquaredExp() # kernel
 model = SGPR(D = 1, M = 20, kernel = kernel, Z = z)
 
 def train(module, x, y, n_iters=50, lr = 1e-3):
@@ -44,9 +45,9 @@ def train(module, x, y, n_iters=50, lr = 1e-3):
         nmll.backward()
         opt.step()
         print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()} ")
-        print(f"Kernel lengthscale {module.kernel.lengthscale.item()}")
-        print(f"Kernel prefactor {module.kernel.prefactor.item()}")
-        print(f"Noise std {module.noise_std.item()}")
+        # print(f"Kernel lengthscale {module.kernel.lengthscale.item()}")
+        # print(f"Kernel prefactor {module.kernel.prefactor.item()}")
+        # print(f"Noise std {module.noise_std.item()}")
 
 train(model, x, y, n_iters = 2500, lr = 1e-3)
 posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
