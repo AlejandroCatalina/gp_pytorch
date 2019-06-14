@@ -18,9 +18,15 @@ class SGPR(GPR):
             self.Z = nn.Parameter(Z)
             self.M = Z.shape[0]
         else:
-            self.Z = nn.Parameter(normal_(torch.empty(D_out, self.M, self.D_in)))
+            self.Z = None
         self.m = nn.Parameter(normal_(torch.empty(D_out, self.M, 1)))
         self.L = nn.Parameter((torch.exp(uniform_(torch.empty(D_out, M, M), -3, 0))).tril())
+
+    def __init_inducing_points__(self, X):
+        N, M = X.shape[0], self.M
+        if self.Z is None:
+            indices = torch.randint(0, N, (self.D_out, M))
+            self.Z = nn.Parameter(torch.stack([X[ii, :] for ii in indices]))
 
     def kl_multivariate_normal(self, m_q, L, m_p, S_p):
         M = self.M
@@ -37,6 +43,9 @@ class SGPR(GPR):
 
     def forward(self, X, y = None):
         N, M = X.shape[0], self.M
+
+        # ugly but life is hard
+        self.__init_inducing_points__(X)
         x, z = X, self.Z
 
         N_noise = (self.noise_std.unsqueeze(-1) ** 2
