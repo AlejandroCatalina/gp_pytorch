@@ -32,7 +32,7 @@ class DGP(nn.Module):
 
         return f_l, cov_l
 
-    def neg_log_lik(self, X, y, K = 100):
+    def neg_log_lik(self, X, y, K = 10):
         N = X.shape[0]
 
         # draw K samples from the DGP posterior approximation
@@ -56,7 +56,7 @@ class DGP(nn.Module):
     def KL(self):
         return torch.sum(torch.stack([node.KL().sum() for node in self.layers]))
 
-    def predict(self, x_test, full_cov = True, K = 10):
+    def predict(self, x_test, full_cov = True, K = 100):
         # draw K samples from the DGP posterior approximation
         f_l, cov_l = [], []
         for _ in range(K):
