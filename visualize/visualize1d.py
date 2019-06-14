@@ -38,4 +38,5 @@ def visualize1d(x=None, y=None, y_noisy=None, x_test=None, predictive_mean=None,
     plt.legend(loc="best") # loc=best prevents legend from overlapping fig.
     plt.savefig(filename)
     plt.clf()
+    plt.close()
     print(f"Saved figure {filename}")
