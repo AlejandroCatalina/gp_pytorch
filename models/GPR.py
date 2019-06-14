@@ -8,23 +8,25 @@ from torch.nn.init import uniform_, normal_
 
 
 class GPR(nn.Module):
-    def __init__(self, kernel):
+    def __init__(self, D_out = 1, kernel = None):
         super(GPR, self).__init__()
         self.kernel = kernel
-        self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(1, 1), -3., 0.)))
+        self.D_out = D_out
+        self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(D_out, 1), -2., 0.)))
 
     def forward(self, X, y):
         N, _ = X.shape
 
-        Kxx = self.kernel(X, X) + 1e-3 * torch.eye(N)
-        Kxx_inv = (Kxx + self.noise_std * torch.eye(N)).inverse()
+        N_noise = (self.noise_std.unsqueeze(-1) ** 2
+                   * torch.stack([torch.eye(N) for _ in range(self.D_out)]))
+        Kxx = self.kernel(X, X) + N_noise
+        Kxx_inv = (Kxx + N_noise).inverse()
 
         self.Kxx_inv = Kxx_inv
         self.X = X
 
         mu = Kxx.t() @ Kxx_inv @ y
-        cov = (Kxx + self.noise_std * torch.eye(N)
-               - Kxx.t() @ Kxx_inv @ Kxx)
+        cov = (Kxx + N_noise - Kxx.t() @ Kxx_inv @ Kxx)
         return mu, cov
 
     def neg_log_lik(self, X, y):
