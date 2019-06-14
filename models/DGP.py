@@ -7,7 +7,7 @@ from .SGPR import SGPR
 class DGP(nn.Module):
     def __init__(self, D_in, layers_sizes, kernel, M = 10):
         super(DGP, self).__init__()
-        self.layers = []
+        self.layers = nn.ModuleList([])
         for D_out in layers_sizes:
             self.layers.append(SGPR(D_in, M = M, kernel = kernel(), D_out = D_out))
             D_in = D_out
@@ -19,12 +19,12 @@ class DGP(nn.Module):
             mu_l = mu_l.squeeze(-1)
 
             eps = dist.MultivariateNormal(torch.zeros_like(mu_l),
-                                          torch.eye(mu_l.shape[0])).sample()
+                                          torch.eye(mu_l.shape[1])).sample()
             f_l = mu_l + eps * torch.einsum('kii->ki', cov_l).sqrt()
 
         return f_l, cov_l
 
-    def neg_log_likelihood(self, X, y, K = 10):
+    def neg_log_lik(self, X, y, K = 10):
         N = X.shape[0]
 
         # draw K samples from the DGP posterior approximation
@@ -46,9 +46,9 @@ class DGP(nn.Module):
                 - 0.5 * N * torch.log(2 * torch.tensor(math.pi))).mean()
 
     def KL(self):
-        return torch.sum([node.KL() for node in self.layers])
+        return torch.sum(torch.stack([node.KL().sum() for node in self.layers]))
 
-    def predict(self, x_test, full_cov = True):
+    def predict(self, x_test, full_cov = True, K = 10):
         # draw K samples from the DGP posterior approximation
         f_l, cov_l = [], []
         for _ in range(K):
