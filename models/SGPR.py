@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import torch
+import pdb
 import torch.nn as nn
 from torch.nn.init import normal_, uniform_
 
@@ -8,15 +9,16 @@ from .GPR import GPR
 
 
 class SGPR(GPR):
-    def __init__(self, D, M = 10, kernel = None, D_out = 1, Z = None):
-        super(SGPR, self).__init__(kernel)
-        self.M, self.D = M, D
+    def __init__(self, D_in, M = 10, kernel = None, D_out = 1, Z = None, mean = lambda X: 0):
+        super(SGPR, self).__init__(D_out = D_out, kernel = kernel)
+        self.M, self.D_in = M, D_in
+        self.mean = mean
 
         if Z is not None:
             self.Z = nn.Parameter(Z)
             self.M = Z.shape[0]
         else:
-            self.Z = nn.Parameter(normal_(torch.empty(D_out, self.M, D)))
+            self.Z = nn.Parameter(normal_(torch.empty(D_out, self.M, self.D_in)))
         self.m = nn.Parameter(normal_(torch.empty(D_out, self.M, 1)))
         self.L = nn.Parameter((torch.exp(uniform_(torch.empty(D_out, M, M), -3, 0))).tril())
 
@@ -36,9 +38,14 @@ class SGPR(GPR):
     def forward(self, X, y = None):
         N, M = X.shape[0], self.M
         x, z = X, self.Z
-        Knn = self.kernel(x, x.unsqueeze(0)) + (1e-3 * torch.eye(N))
+
+        N_noise = (self.noise_std.unsqueeze(-1) ** 2
+                   * torch.stack([torch.eye(N) for _ in range(self.D_out)]))
+        M_noise = (self.noise_std.unsqueeze(-1) ** 2
+                   * torch.stack([torch.eye(M) for _ in range(self.D_out)]))
+        Knn = self.kernel(x, x.unsqueeze(0)) + N_noise
         Knm = self.kernel(x, z)
-        Kmm = self.kernel(z, z) + (1e-1 * torch.eye(M))
+        Kmm = self.kernel(z, z) + M_noise
         Kmm_inv = Kmm.inverse()
         A = Knm @ Kmm_inv
         S = self.L @ self.L.transpose(1, 2)
@@ -46,7 +53,7 @@ class SGPR(GPR):
         mu = A @ self.m
         cov = Knn + A @ (S - Kmm) @ A.transpose(1, 2)
 
-        return mu, cov
+        return self.mean(X) + mu, cov
 
     def neg_log_lik(self, X, y):
         N = X.shape[0]
