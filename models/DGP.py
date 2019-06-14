@@ -1,0 +1,69 @@
+import torch
+import torch.nn as nn
+from torch import distributions as dist
+
+from .SGPR import SGPR
+
+class DGP(nn.Module):
+    def __init__(self, D_in, layers_sizes, kernel, M = 10):
+        super(DGP, self).__init__()
+        self.layers = []
+        for D_out in layers_sizes:
+            self.layers.append(SGPR(D_in, M = M, kernel = kernel(), D_out = D_out))
+            D_in = D_out
+
+    def forward(self, X, y = None):
+        f_l = X.t()
+        for node in self.layers:
+            mu_l, cov_l = node.forward(f_l.t(), y = y)
+            mu_l = mu_l.squeeze(-1)
+
+            eps = dist.MultivariateNormal(torch.zeros_like(mu_l),
+                                          torch.eye(mu_l.shape[0])).sample()
+            f_l = mu_l + eps * torch.einsum('kii->ki', cov_l).sqrt()
+
+        return f_l, cov_l
+
+    def neg_log_likelihood(self, X, y, K = 10):
+        N = X.shape[0]
+
+        # draw K samples from the DGP posterior approximation
+        f_l, cov_l = [], []
+        for _ in range(K):
+            f_hat_l, cov_hat_l = self.forward(X, y)
+            f_l.append(f_hat_l.t())
+            cov_l.append(cov_hat_l)
+
+        # f_L has shape (K, N, 1), cov_L has shape (K, N, N)
+        f_L = torch.stack(f_l)
+        cov_L = torch.stack(cov_l).squeeze()
+
+        noise_std = self.layers[-1].noise_std
+        S = noise_std ** 2 * torch.eye(N)
+        # this has shape (K)
+        return (- 0.5 * ((y - f_L).transpose(1, 2) @ S.inverse() @ (y - f_L)).squeeze()
+                - 1. / (2 * noise_std ** 2) * torch.einsum('kii', cov_L)
+                - 0.5 * N * torch.log(2 * torch.tensor(math.pi))).mean()
+
+    def KL(self):
+        return torch.sum([node.KL() for node in self.layers])
+
+    def predict(self, x_test, full_cov = True):
+        # draw K samples from the DGP posterior approximation
+        f_l, cov_l = [], []
+        for _ in range(K):
+            f_hat_l, cov_hat_l = self.forward(x_test, y = None)
+            f_l.append(f_hat_l.t())
+            cov_l.append(cov_hat_l)
+
+        # f_L has shape (K, N, 1), cov_L has shape (K, N, N)
+        f_L = torch.stack(f_l)
+        cov_L = torch.stack(cov_l).squeeze()
+
+        mu = torch.mean(f_L, dim = 0)
+        cov = torch.mean(cov_L, dim = 0)
+
+        if not full_cov:
+            var = cov.diag().sqrt()
+            return mu, var
+        return mu, cov
