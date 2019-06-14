@@ -10,14 +10,13 @@ class DGP(nn.Module):
         super(DGP, self).__init__()
         self.layers = nn.ModuleList([])
         for D_out in layers_sizes:
-            self.layers.append(SGPR(D_in, M = M, kernel = kernel(), D_out = D_out,
+            self.layers.append(SGPR(D_in, M = M, kernel = kernel(D_out), D_out = D_out,
                                     mean = lambda X: torch.mean(X, dim = 1, keepdim = True)))
             D_in = D_out
 
     def __str__(self):
         layers_sizes = [str(self.layers[0].D_in)]
-        if len(self.layers) > 1:
-            layers_sizes.extend([str(node.D_out) for node in self.layers[1:]])
+        layers_sizes.extend([str(node.D_out) for node in self.layers])
         sizes_str = "-".join(layers_sizes)
         return f"DGP-{sizes_str}"
 
@@ -33,7 +32,7 @@ class DGP(nn.Module):
 
         return f_l, cov_l
 
-    def neg_log_lik(self, X, y, K = 10):
+    def neg_log_lik(self, X, y, K = 100):
         N = X.shape[0]
 
         # draw K samples from the DGP posterior approximation
