@@ -12,7 +12,7 @@ class GPR(nn.Module):
         super(GPR, self).__init__()
         self.kernel = kernel
         self.D_out = D_out
-        self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(D_out, 1), -2., 0.)))
+        self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(D_out, 1), -4., -3.)))
 
     def forward(self, X, y):
         N, _ = X.shape
