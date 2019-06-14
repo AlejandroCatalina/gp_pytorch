@@ -25,8 +25,8 @@ class GPR(nn.Module):
         self.Kxx_inv = Kxx_inv
         self.X = X
 
-        mu = Kxx.t() @ Kxx_inv @ y
-        cov = (Kxx + N_noise - Kxx.t() @ Kxx_inv @ Kxx)
+        mu = Kxx.transpose(1, 2) @ Kxx_inv @ y
+        cov = (Kxx + N_noise - Kxx.transpose(1, 2) @ Kxx_inv @ Kxx)
         return mu, cov
 
     def neg_log_lik(self, X, y):
@@ -48,9 +48,9 @@ class GPR(nn.Module):
         Ks = self.kernel(X_test, X) + 1e-3 * torch.eye(N)
         Kss = self.kernel(X_test, X_test) + 1e-3 * torch.eye(N)
 
-        mu = Ks.t() @ Kxx_inv @ y
+        mu = Ks.transpose(1, 2) @ Kxx_inv @ y
         cov = (Ks + self.noise_std * torch.eye(N)
-               - Ks.t() @ Kxx_inv @ Ks)
+               - Ks.transpose(1, 2) @ Kxx_inv @ Ks)
         if not full_cov:
             return mu, cov.diag().sqrt()
         return mu, cov
