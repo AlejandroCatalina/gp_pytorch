@@ -8,12 +8,13 @@ from .GPR import GPR
 
 
 class SGPR(GPR):
-    def __init__(self, D, M, kernel, D_out = 1, Z = None):
+    def __init__(self, D, M = 10, kernel = None, D_out = 1, Z = None):
         super(SGPR, self).__init__(kernel)
         self.M, self.D = M, D
 
         if Z is not None:
             self.Z = nn.Parameter(Z)
+            self.M = Z.shape[0]
         else:
             self.Z = nn.Parameter(normal_(torch.empty(D_out, self.M, D)))
         self.m = nn.Parameter(normal_(torch.empty(D_out, self.M, 1)))
