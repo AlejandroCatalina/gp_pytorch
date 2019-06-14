@@ -48,6 +48,6 @@ def train(module, x, y, n_iters=50, lr = 1e-3):
         print(f"Kernel prefactor {module.kernel.prefactor.item()}")
         print(f"Noise std {module.noise_std.item()}")
 
-train(model, x, y, n_iters = 50)
+train(model, x, y, n_iters = 2500, lr = 1e-3)
 posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
 visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, "GP-sparse.pdf") # x , true function, noisy function, x_test, prediction_mean, pred_var, filename
