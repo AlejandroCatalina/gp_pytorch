@@ -34,9 +34,9 @@ x_test_ = (x_test - x.mean()) / x.std()
 kernel  = SquaredExp(D_out = 1) # kernel
 model = SGPR(D_in = 1, D_out = 1, M = 20, kernel = kernel, Z = z)
 
-def train(module, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plot = False):
+def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plot = False):
     # optimize log marginal likelihood
-    opt = torch.optim.Adam(module.parameters(), lr=lr)
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
 
     # training loop
     for iter in range(n_iters):
@@ -55,9 +55,9 @@ visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, "GP-sparse.pdf")
 
 #
 N = 1000
-X = torch.linspace(0.0, 5.0, N)
-y = 0.5 * torch.sin(3*X)
-y_noisy = y + dist.Normal(0.0, 0.2).sample(sample_shape=(N,))
+X = torch.linspace(0.0, 5.0, N).reshape(-1, 1)
+y = 0.5 * torch.sin(3*X).reshape(-1, 1)
+y_noisy = y + dist.Normal(0.0, 0.2).sample(sample_shape=(N, 1))
 X_ = (X - X.mean()) / X.std()
 X_test = X_
 
