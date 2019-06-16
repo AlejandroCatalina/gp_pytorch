@@ -1,9 +1,13 @@
-import torch
+import math
 from collections import namedtuple
-from models import GPR, SGPR
-from losses import elbo
-from kernels import SquaredExp
+
 import numpy as np
+import torch
+from torch import distributions as dist
+
+from kernels import SquaredExp
+from losses import elbo
+from models import DGP, GPR, SGPR
 from visualize import visualize1d as visualize
 
 # define the constants
@@ -60,4 +64,3 @@ y = 0.5 * torch.sin(3*X).reshape(-1, 1)
 y_noisy = y + dist.Normal(0.0, 0.2).sample(sample_shape=(N, 1))
 X_ = (X - X.mean()) / X.std()
 X_test = X_
-
