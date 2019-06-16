@@ -1,5 +1,4 @@
 import math
-import pdb
 
 import numpy as np
 import torch
@@ -12,14 +11,14 @@ class GPR(nn.Module):
         super(GPR, self).__init__()
         self.kernel = kernel
         self.D_out = D_out
-        self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(D_out, 1), -4., -3.)))
+        self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(D_out, 1), -6., -4.)))
 
     def forward(self, X, y):
         N, _ = X.shape
 
-        N_noise = (self.noise_std.unsqueeze(-1) ** 2
-                   * torch.stack([torch.eye(N) for _ in range(self.D_out)]))
-        Kxx = self.kernel(X, X) + N_noise
+        N_noise = (1e-3 * torch.stack([torch.eye(N) for _ in range(self.D_out)]))
+        Kxx = self.kernel(X.unsqueeze(0).repeat(self.D_out, 1, 1),
+                          X.unsqueeze(0).repeat(self.D_out, 1, 1)) + N_noise
         Kxx_inv = (Kxx + N_noise).inverse()
 
         self.Kxx_inv = Kxx_inv
@@ -34,8 +33,8 @@ class GPR(nn.Module):
         mu, cov = self.forward(X, y)
         S = self.noise_std ** 2 * torch.eye(N)
 
-        return (- 0.5 * (y - mu).t() @ S.inverse() @ (y - mu)
-                - 1. / (2 * self.noise_std ** 2) * torch.trace(cov)
+        return (- 0.5 * ( (y - mu).transpose(1, 2) @ S.inverse() @ (y - mu) ).squeeze()
+                - N / (2 * self.noise_std ** 2) * torch.einsum('kii', cov).squeeze()
                 - 0.5 * N * torch.log(2 * torch.tensor(math.pi)))
 
     def KL(self):
@@ -45,12 +44,14 @@ class GPR(nn.Module):
         N = X_test.shape[0]
         X, Kxx_inv = self.X, self.Kxx_inv
 
-        Ks = self.kernel(X_test, X) + 1e-3 * torch.eye(N)
-        Kss = self.kernel(X_test, X_test) + 1e-3 * torch.eye(N)
+        Ks = self.kernel(X_test.unsqueeze(0).repeat(self.D_out, 1, 1),
+                         X.unsqueeze(0).repeat(self.D_out, 1, 1)) + 1e-3 * torch.eye(N)
+        Kss = self.kernel(X_test.unsqueeze(0).repeat(self.D_out, 1, 1),
+                          X_test.unsqueeze(0).repeat(self.D_out, 1, 1)) + 1e-3 * torch.eye(N)
 
-        mu = Ks.transpose(1, 2) @ Kxx_inv @ y
+        mu = ( Ks.transpose(1, 2) @ Kxx_inv @ y ).squeeze().reshape(-1, 1)
         cov = (Ks + self.noise_std * torch.eye(N)
-               - Ks.transpose(1, 2) @ Kxx_inv @ Ks)
+               - Ks.transpose(1, 2) @ Kxx_inv @ Ks).squeeze()
         if not full_cov:
             return mu, cov.diag().sqrt()
         return mu, cov

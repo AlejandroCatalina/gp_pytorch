@@ -32,7 +32,7 @@ class DGP(nn.Module):
 
         return f_l, cov_l
 
-    def neg_log_lik(self, X, y, K = 10):
+    def neg_log_lik(self, X, y, K = 1):
         N = X.shape[0]
 
         # draw K samples from the DGP posterior approximation
@@ -44,13 +44,13 @@ class DGP(nn.Module):
 
         # f_L has shape (K, N, 1), cov_L has shape (K, N, N)
         f_L = torch.stack(f_l)
-        cov_L = torch.stack(cov_l).squeeze()
+        cov_L = torch.stack(cov_l).squeeze(1)
 
         noise_std = self.layers[-1].noise_std
         S = noise_std ** 2 * torch.eye(N)
         # this has shape (K)
-        return 1. / N * (- 0.5 * ((y - f_L).transpose(1, 2) @ S.inverse() @ (y - f_L)).squeeze()
-                - 1. / (2 * noise_std ** 2) * torch.einsum('kii', cov_L)
+        return (- 0.5 * ((y - f_L).transpose(1, 2) @ S.inverse() @ (y - f_L)).squeeze()
+                - N / (2 * noise_std ** 2) * torch.einsum('kii', cov_L)
                 - 0.5 * N * torch.log(2 * torch.tensor(math.pi))).mean()
 
     def KL(self):

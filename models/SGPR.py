@@ -21,7 +21,8 @@ class SGPR(GPR):
         else:
             self.Z = None
         self.m = nn.Parameter(normal_(torch.empty(D_out, self.M, 1)))
-        self.L = nn.Parameter(torch.stack([1e-2 * torch.eye(M) for _ in range(self.D_out)]).tril())
+        self.L = nn.Parameter(torch.stack([torch.abs(torch.randn((1, 1)))
+                                           * torch.eye(M) for _ in range(self.D_out)]).tril())
 
     def __init_inducing_points__(self, X):
         N, M = X.shape[0], self.M
@@ -48,11 +49,8 @@ class SGPR(GPR):
         # ugly but life is hard
         self.__init_inducing_points__(X)
         x, z = X, self.Z
-
-        N_noise = (self.noise_std.unsqueeze(-1) ** 2
-                   * torch.stack([torch.eye(N) for _ in range(self.D_out)]))
-        M_noise = (self.noise_std.unsqueeze(-1) ** 2
-                   * torch.stack([torch.eye(M) for _ in range(self.D_out)]))
+        N_noise = (1e-3 * torch.stack([torch.eye(N) for _ in range(self.D_out)]))
+        M_noise = (1e-3 * torch.stack([torch.eye(M) for _ in range(self.D_out)]))
         Knn = self.kernel(x.unsqueeze(0).repeat(self.D_out, 1, 1),
                           x.unsqueeze(0).repeat(self.D_out, 1, 1)) + N_noise
         Knm = self.kernel(x.unsqueeze(0).repeat(self.D_out, 1, 1), z)
@@ -74,7 +72,7 @@ class SGPR(GPR):
         # remove last dimension and get [N, D_out]
         mu = mu.squeeze(-1).t()
         return (- 0.5 * (y - mu).t() @ S.inverse() @ (y - mu)
-                - 1. / (2 * self.noise_std ** 2) * torch.einsum('kii', cov)
+                - N / (2 * self.noise_std ** 2) * torch.einsum('kii', cov)
                 - 0.5 * N * torch.log(2 * torch.tensor(math.pi)))
 
 
