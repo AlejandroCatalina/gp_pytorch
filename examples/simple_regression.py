@@ -5,10 +5,10 @@ import numpy as np
 import torch
 from torch import distributions as dist
 
-from kernels import SquaredExp
-from losses import elbo
-from models import DGP, GPR, SGPR
-from visualize import visualize1d as visualize
+from gp_pytorch.kernels import SquaredExp
+from gp_pytorch.losses import elbo
+from gp_pytorch.models import DGP, GPR, SGPR
+from gp_pytorch.visualize import visualize1d as visualize
 
 # define the constants
 consts = namedtuple("consts", "Ntrain Ntest noisestd")
@@ -53,7 +53,7 @@ def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plo
             posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
             visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, f"{model}-{iter}.pdf")
 
-train(model, x, y, n_iters = 2500, lr = 1e-3)
+train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 2500, lr = 1e-3)
 posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
 visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, "GP-sparse.pdf") # x , true function, noisy function, x_test, prediction_mean, pred_var, filename
 
@@ -64,3 +64,9 @@ y = 0.5 * torch.sin(3*X).reshape(-1, 1)
 y_noisy = y + dist.Normal(0.0, 0.2).sample(sample_shape=(N, 1))
 X_ = (X - X.mean()) / X.std()
 X_test = X_
+
+kernel  = SquaredExp(D_out = 1) # kernel
+model = DGP(D_in = 1, layers_sizes = [3, 1], kernel = SquaredExp, M = 20)
+train(model, X_, y_noisy, y = y, x_test = X_test, n_iters = 2500, lr = 1e-3)
+posterior_mean, posterior_var = model.predict(X_test, full_cov=False)
+visualize(X_, y, y_noisy, X_test, posterior_mean, posterior_var, "DGP-sparse.pdf")
