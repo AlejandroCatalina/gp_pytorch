@@ -14,7 +14,7 @@ from setuptools import find_packages, setup, Command
 # Package meta-data.
 NAME = 'gp_pytorch'
 DESCRIPTION = 'GP, SparseGP and DeepGP implementation using pytorch'
-URL = 'https://github.com/AlejandroCatalina/gp-pytorch'
+URL = 'https://github.com/AlejandroCatalina/gp_pytorch'
 EMAIL = 'alejandro.catalina@aalto.fi'
 AUTHOR = 'Alejandro Catalina & Kunal Gosh'
 REQUIRES_PYTHON = '>=3.6.0'
@@ -121,7 +121,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
-        'Scientific/Engineering :: Artificial Intelligence', 
+        'Scientific/Engineering :: Artificial Intelligence'
     ],
     # $ setup.py publish support.
     cmdclass={
