@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
-from utils import castargs_pytorch_to_numpy
+from gppytorch.utils import castargs_pytorch_to_numpy
 
 @castargs_pytorch_to_numpy
 def visualize1d(x=None, y=None, y_noisy=None, x_test=None, predictive_mean=None, predictive_var=None, filename=None):

@@ -5,10 +5,10 @@ import numpy as np
 import torch
 from torch import distributions as dist
 
-from ..kernels import SquaredExp
-from ..losses import elbo
-from ..models import DGP, GPR, SGPR
-from ..visualize import visualize1d as visualize
+from gppytorch.kernels import SquaredExp
+from gppytorch.losses import elbo
+from gppytorch.models import DGP, GPR, SGPR
+from gppytorch.visualize import visualize1d as visualize
 
 # define the constants
 consts = namedtuple("consts", "Ntrain Ntest noisestd")

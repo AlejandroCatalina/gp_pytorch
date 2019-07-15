@@ -12,11 +12,11 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'gp_pytorch'
+NAME = 'gppytorch'
 DESCRIPTION = 'GP, SparseGP and DeepGP implementation using pytorch'
 URL = 'https://github.com/AlejandroCatalina/gp_pytorch'
 EMAIL = 'alejandro.catalina@aalto.fi'
-AUTHOR = 'Alejandro Catalina & Kunal Gosh'
+AUTHOR = 'Alejandro Catalina & Kunal Ghosh'
 REQUIRES_PYTHON = '>=3.6.0'
 VERSION = '0.1.0'
 

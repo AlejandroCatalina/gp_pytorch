@@ -4,8 +4,7 @@ import torch
 import torch.nn as nn
 from torch.nn.init import normal_, uniform_
 
-from .GPR import GPR
-
+from gppytorch.models import GPR
 
 class SGPR(GPR):
     def __init__(self, D_in, M = 10, kernel = None, D_out = 1, Z = None, mean = lambda X: 0):
