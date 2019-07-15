@@ -15,7 +15,7 @@ class SGPR(GPR):
 
         if Z is not None:
             self.Z = nn.Parameter(Z)
-            self.M = Z.shape[0]
+            self.M = Z.shape[1]
         else:
             self.Z = None
         self.m = nn.Parameter(normal_(torch.empty(D_out, self.M, 1)))
