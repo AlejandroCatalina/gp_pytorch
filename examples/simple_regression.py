@@ -15,7 +15,9 @@ consts = namedtuple("consts", "Ntrain Ntest noisestd")
 consts.Ntrain = 500 # 500 training points
 consts.Ntest  = 500 # 5 test points
 consts.noisestd = 0.3 # noise added to data
+consts.seed = 280219
 
+torch.manual_seed(consts.seed)
 
 # data generating function
 # f = lambda x: 2*x + np.sin(5*x)
@@ -36,7 +38,8 @@ x_test   = torch.linspace(-10, 10, consts.Ntest).reshape((-1, 1)) # test data
 x_test_ = (x_test - x.mean()) / x.std()
 
 kernel  = SquaredExp(D_out = 1) # kernel
-model = SGPR(D_in = 1, D_out = 1, M = 20, kernel = kernel, Z = z)
+model = SGPR(D_in = 1, D_out = 1, M = 20, kernel = kernel, Z = z,
+             mean = lambda X: torch.mean(X, dim = 1, keepdim = True))
 
 def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plot = False):
     # optimize log marginal likelihood
@@ -53,20 +56,12 @@ def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plo
             posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
             visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, f"../{model}-{iter}.pdf")
 
-train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 2500, lr = 1e-3, plot = TRUE)
-posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
-visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, "GP-sparse.pdf") # x , true function, noisy function, x_test, prediction_mean, pred_var, filename
-
-#
-N = 1000
-X = torch.linspace(0.0, 5.0, N).reshape(-1, 1)
-y = 0.5 * torch.sin(3*X).reshape(-1, 1)
-y_noisy = y + dist.Normal(0.0, 0.2).sample(sample_shape=(N, 1))
-X_ = (X - X.mean()) / X.std()
-X_test = X_
+train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 5000, lr = 1e-2, plot = True)
+posterior_mean, posterior_var = model.predict(x_test_, full_cov=False
+visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, "../SGPR-5000.pdf") # x , true function, noisy function, x_test, prediction_mean, pred_var, filename
 
 kernel  = SquaredExp(D_out = 1) # kernel
 model = DGP(D_in = 1, layers_sizes = [3, 1], kernel = SquaredExp, M = 20)
-train(model, X_, y_noisy, y = y, x_test = X_test, n_iters = 2500, lr = 1e-3)
-posterior_mean, posterior_var = model.predict(X_test, full_cov=False)
-visualize(X_, y, y_noisy, X_test, posterior_mean, posterior_var, "DGP-sparse.pdf")
+train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 2500, lr = 1e-2, plot = True)
+posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
+visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, "../DGP-2500.pdf")
