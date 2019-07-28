@@ -51,9 +51,9 @@ def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plo
         print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()} ")
         if plot and y is not None and x_test is not None and not iter % 50:
             posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
-            visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, f"{model}-{iter}.pdf")
+            visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, f"../{model}-{iter}.pdf")
 
-train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 2500, lr = 1e-3)
+train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 2500, lr = 1e-3, plot = TRUE)
 posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
 visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, "GP-sparse.pdf") # x , true function, noisy function, x_test, prediction_mean, pred_var, filename
 
