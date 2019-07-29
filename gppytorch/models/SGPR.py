@@ -65,7 +65,7 @@ class SGPR(GPR):
 
         return self.mean(X) + mu, cov
 
-    def neg_log_lik(self, X, y):
+    def neg_log_lik(self, X, y, K = None):
         N = X.shape[0]
         mu, cov = self.forward(X, y)
         S = self.noise_std ** 2 * torch.eye(N)
