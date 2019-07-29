@@ -1,7 +1,8 @@
 import torch
 
-from ggpytorch.models import DGP
-from ggpytorch.models import SGPR
+from torch import distributions as dist
+from gppytorch.models import DGP
+from gppytorch.models import SGPR
 
 class DiffGP(DGP):
     """Implementation of differential GP according to
@@ -10,6 +11,7 @@ class DiffGP(DGP):
     def __init__(self, D_in, D_out, T, timestep, kernel, M = 10):
         super(DiffGP, self).__init__(D_in, [], kernel, M)
         self.T = T
+        self.M = M
         self.dt = torch.tensor(timestep)
         self.f = SGPR(D_in = D_in, M = M, kernel = kernel(D_in), D_out = D_in,
                       mean = lambda X: torch.mean(X, dim = 1, keepdim = True))
@@ -19,6 +21,9 @@ class DiffGP(DGP):
 
     def __str__(self):
         return f"DiffGP-{self.T}-{self.M}"
+
+    def get_noise(self):
+        return self.g.noise_std
 
     def integrate(self, X, y = None, save_checkpoints = False):
         X_t = X.t()
@@ -32,7 +37,7 @@ class DiffGP(DGP):
             if save_checkpoints:
                 self.checkpoints.append(X_t)
 
-        return X_t
+        return X_t.t()
 
     def forward(self, X, y = None, save_checkpoints = True):
         """Draw one sample (trajectory) from the variational posterior."""

@@ -33,6 +33,9 @@ class DGP(nn.Module):
 
         return f_l, cov_l
 
+    def get_noise(self):
+        return self.layers[-1].noise_std
+
     def neg_log_lik(self, X, y, K = 1):
         N = X.shape[0]
 
@@ -40,14 +43,14 @@ class DGP(nn.Module):
         f_l, cov_l = [], []
         for _ in range(K):
             f_hat_l, cov_hat_l = self.forward(X, y)
-            f_l.append(f_hat_l.t())
+            f_l.append(f_hat_l.squeeze(-1).t())
             cov_l.append(cov_hat_l)
 
         # f_L has shape (K, N, 1), cov_L has shape (K, N, N)
         f_L = torch.stack(f_l)
         cov_L = torch.stack(cov_l).squeeze(1)
 
-        noise_std = self.layers[-1].noise_std
+        noise_std = self.get_noise()
         S = noise_std ** 2 * torch.eye(N)
         # this has shape (K)
         return (- 0.5 * ((y - f_L).transpose(1, 2) @ S.inverse() @ (y - f_L)).squeeze()
@@ -62,7 +65,7 @@ class DGP(nn.Module):
         f_l, cov_l = [], []
         for _ in range(K):
             f_hat_l, cov_hat_l = self.forward(x_test, y = None)
-            f_l.append(f_hat_l.t())
+            f_l.append(f_hat_l.squeeze(-1).t())
             cov_l.append(cov_hat_l)
 
         # f_L has shape (K, N, 1), cov_L has shape (K, N, N)
