@@ -12,7 +12,7 @@ class DiffGP(DGP):
         super(DiffGP, self).__init__(D_in, [], kernel, M)
         self.T = T
         self.M = M
-        self.dt = torch.tensor(timestep)
+        self.dt = torch.tensor(timestep).float()
         self.f = SGPR(D_in = D_in, M = M, kernel = kernel(D_in), D_out = D_in,
                       mean = lambda X: torch.mean(X, dim = 1, keepdim = True))
         self.g = SGPR(D_in = D_in, M = M, kernel = kernel(D_out), D_out = D_out,
