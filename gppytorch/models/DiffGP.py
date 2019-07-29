@@ -1,7 +1,7 @@
 import torch
 
-from .DGP import DGP
-from .SGPR import SGPR
+from ggpytorch.models import DGP
+from ggpytorch.models import SGPR
 
 class DiffGP(DGP):
     """Implementation of differential GP according to
@@ -12,7 +12,7 @@ class DiffGP(DGP):
         self.T = T
         self.dt = torch.tensor(timestep)
         self.f = SGPR(D_in = D_in, M = M, kernel = kernel(D_in), D_out = D_in,
-                      mean = lambda X: X)
+                      mean = lambda X: torch.mean(X, dim = 1, keepdim = True))
         self.g = SGPR(D_in = D_in, M = M, kernel = kernel(D_out), D_out = D_out,
                       mean = lambda X: torch.mean(X, dim = 1, keepdim = True))
         self.checkpoints = []
