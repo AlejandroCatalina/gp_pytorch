@@ -4,8 +4,7 @@ import torch
 import torch.nn as nn
 from torch import distributions as dist
 
-from .SGPR import SGPR
-
+from gppytorch.models import SGPR
 
 class DGP(nn.Module):
     def __init__(self, D_in, layers_sizes, kernel, M = 10):

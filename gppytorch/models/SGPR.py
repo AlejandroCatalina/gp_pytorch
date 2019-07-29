@@ -4,8 +4,7 @@ import torch
 import torch.nn as nn
 from torch.nn.init import normal_, uniform_
 
-from .GPR import GPR
-
+from gppytorch.models import GPR
 
 class SGPR(GPR):
     def __init__(self, D_in, M = 10, kernel = None, D_out = 1, Z = None, mean = lambda X: 0):
@@ -16,12 +15,15 @@ class SGPR(GPR):
 
         if Z is not None:
             self.Z = nn.Parameter(Z)
-            self.M = Z.shape[0]
+            self.M = Z.shape[1]
         else:
             self.Z = None
         self.m = nn.Parameter(normal_(torch.empty(D_out, self.M, 1)))
         self.L = nn.Parameter(torch.stack([torch.abs(torch.randn((1, 1)))
                                            * torch.eye(M) for _ in range(self.D_out)]).tril())
+
+    def __str__(self):
+        return f"SGPR-{self.M}"
 
     def __init_inducing_points__(self, X):
         N, M = X.shape[0], self.M
