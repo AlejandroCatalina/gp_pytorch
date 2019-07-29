@@ -41,14 +41,14 @@ kernel  = SquaredExp(D_out = 1) # kernel
 model = SGPR(D_in = 1, D_out = 1, M = 20, kernel = kernel, Z = z,
              mean = lambda X: torch.mean(X, dim = 1, keepdim = True))
 
-def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plot = False):
+def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plot = False, K = 1):
     # optimize log marginal likelihood
     opt = torch.optim.Adam(model.parameters(), lr=lr)
 
     # training loop
     for iter in range(n_iters):
         opt.zero_grad()
-        nmll = -elbo(model, x, y_noisy)
+        nmll = -elbo(model, x, y_noisy, K = K)
         nmll.backward()
         opt.step()
         print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()} ")
@@ -69,7 +69,7 @@ visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, "../DGP-2500.pd
 kernel  = SquaredExp(D_out = 1) # kernel
 model = DiffGP(D_in = 1, D_out = 1, T = .5, timestep = .1, kernel = SquaredExp, M = 20)
 increment = 1000
-train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = increment, lr = 1e-4, plot = False)
+train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = increment, lr = 1e-3, plot = False)
 iters += increment
 posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
 visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, f"../{model}-{iters}.pdf")
