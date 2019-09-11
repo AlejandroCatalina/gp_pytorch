@@ -52,7 +52,11 @@ class DGP(nn.Module):
 
         noise_std = self.get_noise()
         S = noise_std ** 2 * torch.eye(N)
-        # this has shape (K)
+        if torch.isnan((- 0.5 * ((y - f_L).transpose(1, 2) @ S.inverse() @ (y - f_L)).squeeze()
+                        - N / (2 * noise_std ** 2) * torch.einsum('kii', cov_L)
+                        - 0.5 * N * torch.log(2 * torch.tensor(math.pi))).mean()):
+            pdb.set_trace()
+            # this has shape (K)
         return (- 0.5 * ((y - f_L).transpose(1, 2) @ S.inverse() @ (y - f_L)).squeeze()
                 - N / (2 * noise_std ** 2) * torch.einsum('kii', cov_L)
                 - 0.5 * N * torch.log(2 * torch.tensor(math.pi))).mean()

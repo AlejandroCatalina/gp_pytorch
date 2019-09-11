@@ -1,15 +1,16 @@
 import torch
+import pdb
 
 from torch import distributions as dist
 from gppytorch.models import DGP
 from gppytorch.models import SGPR
 
-class DiffGP(DGP):
+class FlowGP(DGP):
     """Implementation of differential GP according to
     Pashupati Hegde et al, Deep learning with differential Gaussian process flows in AISTATS 2019.
     """
     def __init__(self, D_in, D_out, T, timestep, kernel, M = 10):
-        super(DiffGP, self).__init__(D_in, [], kernel, M)
+        super(FlowGP, self).__init__(D_in, [], kernel, M)
         self.T = T
         self.M = M
         self.dt = torch.tensor(timestep).float()
@@ -20,7 +21,7 @@ class DiffGP(DGP):
         self.checkpoints = []
 
     def __str__(self):
-        return f"DiffGP-{self.T}-{self.M}"
+        return f"FlowGP-{self.T}-{self.M}"
 
     def get_noise(self):
         return self.g.noise_std

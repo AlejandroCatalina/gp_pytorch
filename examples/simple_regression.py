@@ -7,7 +7,7 @@ from torch import distributions as dist
 
 from gppytorch.kernels import SquaredExp
 from gppytorch.losses import elbo
-from gppytorch.models import DGP, GPR, SGPR, DiffGP
+from gppytorch.models import DGP, GPR, SGPR, FlowGP
 from gppytorch.visualize import visualize1d as visualize
 
 # define the constants
@@ -67,7 +67,7 @@ posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
 visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, "../DGP-2500.pdf")
 
 kernel  = SquaredExp(D_out = 1) # kernel
-model = DiffGP(D_in = 1, D_out = 1, T = .5, timestep = .1, kernel = SquaredExp, M = 20)
+model = FlowGP(D_in = 1, D_out = 1, T = .5, timestep = .1, kernel = SquaredExp, M = 20)
 increment = 1000
 train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = increment, lr = 1e-3, plot = False)
 iters += increment
