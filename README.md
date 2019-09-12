@@ -24,9 +24,9 @@
   
 ## Roadmap
 
-  [x] Exact GP implementation and testing.
-  [x] Sparse GP implementation and testing.
-  [x] Deep GP implementation and testing.
-  [x] Flow GP implementation.
-  [] Flow GP testing. 
+  - [x] Exact GP implementation and testing.
+  - [x] Sparse GP implementation and testing.
+  - [x] Deep GP implementation and testing.
+  - [x] Flow GP implementation.
+  - [ ] Flow GP testing. 
   It needs more testing, it seems to work but we have yet to fully understand it so we can develop some intuition about how many samples and integration steps are sensible defaults.
