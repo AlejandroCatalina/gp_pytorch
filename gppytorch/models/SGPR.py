@@ -50,8 +50,8 @@ class SGPR(GPR):
         # ugly but life is hard
         self.__init_inducing_points__(X)
         x, z = X, self.Z
-        N_noise = (1e-6 * torch.stack([torch.eye(N) for _ in range(self.D_out)]))
-        M_noise = (1e-6 * torch.stack([torch.eye(M) for _ in range(self.D_out)]))
+        N_noise = (1e-3 * torch.stack([torch.eye(N) for _ in range(self.D_out)]))
+        M_noise = (1e-3 * torch.stack([torch.eye(M) for _ in range(self.D_out)]))
         Knn = self.kernel(x.unsqueeze(0).repeat(self.D_out, 1, 1),
                           x.unsqueeze(0).repeat(self.D_out, 1, 1)) + N_noise
         Knm = self.kernel(x.unsqueeze(0).repeat(self.D_out, 1, 1), z)

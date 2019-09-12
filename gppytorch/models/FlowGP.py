@@ -1,5 +1,4 @@
 import torch
-import pdb
 
 from torch import distributions as dist
 from gppytorch.models import DGP
