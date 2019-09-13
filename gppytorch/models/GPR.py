@@ -5,6 +5,8 @@ import torch
 import torch.nn as nn
 from torch.nn.init import uniform_, normal_
 
+from gppytorch.kernels import SquaredExp
+
 
 class GPR(nn.Module):
     def __init__(self, D_out = 1, kernel = None):
@@ -55,3 +57,21 @@ class GPR(nn.Module):
         if not full_cov:
             return mu, cov.diag().sqrt()
         return mu, cov
+
+    def prior_predictive_check(self, X, sigma_bounds, alpha_bounds, S = 100, K = 10):
+        # save kernel
+        kernel = self.kernel
+
+        # define new kernel
+        sigma_lower, sigma_upper = sigma_bounds
+        alpha_lower, alpha_upper = alpha_bounds
+        k = SquaredExp(D_out = self.D_out, sigma_lower_bound = sigma_lower,
+                       sigma_upper_bound = sigma_upper, alpha_lower_bound = alpha_lower,
+                       alpha_upper_bound = alpha_upper)
+        self.kernel = k
+        predictions = [torch.stack([self.forward(X) for _ in range(K)]) for _ in range(S)]
+
+        # restore kernel
+        self.kernel = kernel
+        return predictions
+
