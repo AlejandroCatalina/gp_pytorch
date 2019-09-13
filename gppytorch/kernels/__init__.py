@@ -1,1 +1,1 @@
-from .sqared_exp import SquaredExp
+from .squared_exp import SquaredExp

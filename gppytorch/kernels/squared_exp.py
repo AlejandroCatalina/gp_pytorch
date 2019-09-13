@@ -6,10 +6,13 @@ from torch.nn.init import uniform_
 log1pe = lambda x: torch.log(1 + torch.exp(x))
 
 class SquaredExp(nn.Module):
-    def __init__(self, D_out):
+    def __init__(self, D_out, sigma_lower_bound = -2.5, sigma_upper_bound = -1.5,
+                 alpha_lower_bound = 0.5, alpha_upper_bound = 0.75):
         super(SquaredExp, self).__init__()
-        self.sigma = nn.Parameter(uniform_(torch.empty(D_out, 1, 1), -2.5, -1.5))
-        self.alpha = nn.Parameter(uniform_(torch.empty(D_out, 1, 1), 0.5, 0.75))
+        self.sigma = nn.Parameter(uniform_(torch.empty(D_out, 1, 1),
+                                           sigma_lower_bound, sigma_upper_bound))
+        self.alpha = nn.Parameter(uniform_(torch.empty(D_out, 1, 1),
+                                           alpha_lower_bound, alpha_upper_bound))
 
     def forward(self, X, Z):
         gamma = log1pe(self.sigma)
