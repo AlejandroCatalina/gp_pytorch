@@ -52,7 +52,7 @@ def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plo
         nmll = -elbo(model, x, y_noisy, K = K)
         nmll.backward()
         opt.step()
-        print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()} ")
+        print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()}")
         if plot and y is not None and x_test is not None and not iter % plot_every:
             posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
             visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, f"../{model}-{iter}.pdf")
@@ -67,9 +67,21 @@ model = FlowGP(D_in = 1, D_out = 1, T = 2.1, timestep = .3,
 if torch.cuda.is_available():
     model.cuda()
 
-increment = 5000
-train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = increment,
+train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 10,
       lr = 1e-1, plot = False, plot_every = 100, K = 50)
-iters += increment
+train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 10,
+      lr = 1e-1, plot = False, plot_every = 100, K = 50)
+train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 10,
+      lr = 1e-1, plot = False, plot_every = 100, K = 50)
 posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
-visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, f"../{model}-{iters}.pdf")
+
+visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, f"../{model}-30.pdf")
+train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 500,
+      lr = 1e-2, plot = False, plot_every = 100, K = 50)
+posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
+
+visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, f"../{model}-530.pdf")
+train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 500,
+      lr = 1e-2, plot = False, plot_every = 100, K = 50)
+posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
+visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, f"../{model}-1030.pdf")
