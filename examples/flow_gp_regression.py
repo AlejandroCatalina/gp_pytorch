@@ -12,6 +12,9 @@ from gppytorch.models import DGP, GPR, SGPR, FlowGP
 from gppytorch.utils import identity_mean
 from gppytorch.visualize import visualize1d as visualize
 
+if torch.cuda.is_available():
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
+
 # define the constants
 consts = namedtuple("consts", "Ntrain Ntest noisestd")
 consts.Ntrain = 500 # 500 training points
@@ -59,6 +62,11 @@ model = FlowGP(D_in = 1, D_out = 1, T = 2.1, timestep = .3,
                kernel = SquaredExp, M = 20, mean_g = identity_mean,
                sigma_f_bounds = [1, 2], alpha_f_bounds = [0.25, 0.5],
                sigma_g_bounds = [1, 2], alpha_g_bounds = [0.25, 0.5])
+
+## double check that the model is running on the GPU
+if torch.cuda.is_available():
+    model.cuda()
+
 increment = 5000
 train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = increment,
       lr = 1e-1, plot = False, plot_every = 100, K = 50)
