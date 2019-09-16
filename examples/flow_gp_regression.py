@@ -1,3 +1,4 @@
+#!/home/catalia1/miniconda3/envs/pytorch/bin/python
 import math
 from collections import namedtuple
 
@@ -60,7 +61,7 @@ model = FlowGP(D_in = 1, D_out = 1, T = 2.1, timestep = .3,
                sigma_g_bounds = [1, 2], alpha_g_bounds = [0.25, 0.5])
 increment = 5000
 train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = increment,
-      lr = 1e-1, plot = True, plot_every = 100, K = 50)
+      lr = 1e-1, plot = False, plot_every = 100, K = 50)
 iters += increment
 posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
 visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, f"../{model}-{iters}.pdf")
