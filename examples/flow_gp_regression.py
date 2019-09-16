@@ -82,6 +82,6 @@ posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
 
 visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, f"../{model}-530.pdf")
 train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 500,
-      lr = 1e-2, plot = False, plot_every = 100, K = 50)
+      lr = 1e-3, plot = False, plot_every = 100, K = 50)
 posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
 visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, f"../{model}-1030.pdf")
