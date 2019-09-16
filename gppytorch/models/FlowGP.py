@@ -13,33 +13,35 @@ class FlowGP(DGP):
     """
     def __init__(self, D_in, D_out, T, timestep, kernel, M = 10,
                  mean_f = zero_mean, mean_g = zero_mean,
-                 sigma_f_bounds = [1, 2], alpha_f_bounds = [0.75, 1],
-                 sigma_g_bounds = [1, 2], alpha_g_bounds = [0.75, 1]):
+                 sigma_f_prior = dist.Uniform(1., 2.),
+                 alpha_f_prior = dist.Uniform(0.25, 0.75),
+                 sigma_g_prior = dist.Uniform(1., 2.),
+                 alpha_g_prior = dist.Uniform(0.25, 0.75)):
         super(FlowGP, self).__init__(D_in, [], kernel, M)
-        sigma_f_lower, sigma_f_upper = sigma_f_bounds
-        sigma_g_lower, sigma_g_upper = sigma_g_bounds
-        alpha_f_lower, alpha_f_upper = alpha_f_bounds
-        alpha_g_lower, alpha_g_upper = alpha_g_bounds
         self.T = T
         self.M = M
         self.dt = torch.tensor(timestep).float()
+        self.D_in = D_in
+        self.D_out = D_out
         self.f = SGPR(D_in = D_in, M = M,
-                      kernel = kernel(D_in, sigma_lower_bound = sigma_f_lower,
-                                      sigma_upper_bound = sigma_f_upper,
-                                      alpha_lower_bound = alpha_f_lower,
-                                      alpha_upper_bound = alpha_f_upper),
-                      D_out = D_in, mean = mean_f) # zero mean for f
+                      kernel = kernel(D_in, sigma_prior = sigma_f_prior,
+                                      alpha_prior = alpha_f_prior),
+                      D_out = D_in, mean = mean_f)
         self.g = SGPR(D_in = D_in, M = M,
-                      kernel = kernel(D_out, sigma_lower_bound = sigma_g_lower,
-                                      sigma_upper_bound = sigma_g_upper,
-                                      alpha_lower_bound = alpha_g_lower,
-                                      alpha_upper_bound = alpha_g_upper),
-                      D_out = D_out, mean = mean_g) # id mean for g
+                      kernel = kernel(D_out, sigma_prior = sigma_g_prior,
+                                      alpha_prior = alpha_g_prior),
+                      D_out = D_out, mean = mean_g)
         self.checkpoints = []
 
     def __str__(self):
         return f"FlowGP-{self.T}-{self.M}"
 
+    def set_kernel_prior(self, sigma_f_prior, alpha_f_prior,
+                         sigma_g_prior, alpha_g_prior, kernel):
+        self.f.kernel = kernel(self.D_in, sigma_prior = sigma_f_prior,
+                               alpha_prior = alpha_f_prior)
+        self.g.kernel = kernel(self.D_out, sigma_prior = sigma_g_prior,
+                               alpha_prior = alpha_g_prior)
     def get_noise(self):
         return self.g.noise_std
 
@@ -68,24 +70,18 @@ class FlowGP(DGP):
         return torch.sum(torch.stack([node.KL().sum()
                                       for node in [self.f, self.g]]))
 
-    def prior_predictive_check(self, X, sigma_f_bounds, alpha_f_bounds,
-                               sigma_g_bounds, alpha_g_bounds, S = 100,
+    def prior_predictive_check(self, X, sigma_f_prior, alpha_f_prior,
+                               sigma_g_prior, alpha_g_prior, S = 100,
                                K = 10):
         # save kernel
         f_kernel = self.f.kernel
         g_kernel = self.g.kernel
 
         # define new kernel
-        sigma_f_lower, sigma_f_upper = sigma_f_bounds
-        sigma_g_lower, sigma_g_upper = sigma_g_bounds
-        alpha_f_lower, alpha_f_upper = alpha_f_bounds
-        alpha_g_lower, alpha_g_upper = alpha_g_bounds
-        k_f = SquaredExp(D_out = self.f.D_out, sigma_lower_bound = sigma_f_lower,
-                         sigma_upper_bound = sigma_f_upper, alpha_lower_bound = alpha_f_lower,
-                         alpha_upper_bound = alpha_f_upper)
-        k_g = SquaredExp(D_out = self.g.D_out, sigma_lower_bound = sigma_g_lower,
-                         sigma_upper_bound = sigma_g_upper, alpha_lower_bound = alpha_g_lower,
-                         alpha_upper_bound = alpha_g_upper)
+        k_f = SquaredExp(D_out = self.f.D_out, sigma_prior = sigma_f_prior,
+                         alpha_prior = alpha_f_prior)
+        k_g = SquaredExp(D_out = self.f.D_out, sigma_prior = sigma_g_prior,
+                         alpha_prior = alpha_g_prior)
         self.f.kernel = k_f
         self.g.kernel = k_g
         predictions = [torch.stack([self.forward(X)[0] # save only mu

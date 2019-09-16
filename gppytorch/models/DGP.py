@@ -3,16 +3,22 @@ import math
 import torch
 import torch.nn as nn
 from gppytorch.models import SGPR
+from gppytorch.utils import identity_mean
 from torch import distributions as dist
 
 
 class DGP(nn.Module):
-    def __init__(self, D_in, layers_sizes, kernel, M = 10):
+    def __init__(self, D_in, layers_sizes, kernel, M = 10,
+                 sigma_prior = dist.Uniform(1., 2),
+                 alpha_prior = dist.Uniform(0.25, 0.75)):
         super(DGP, self).__init__()
         self.layers = nn.ModuleList([])
         for D_out in layers_sizes:
-            self.layers.append(SGPR(D_in, M = M, kernel = kernel(D_out), D_out = D_out,
-                                    mean = lambda X: torch.mean(X, dim = 1, keepdim = True)))
+            self.layers.append(SGPR(D_in, M = M,
+                                    kernel = kernel(D_out, sigma_prior = sigma_prior,
+                                                    alpha_prior = alpha_prior),
+                                    D_out = D_out,
+                                    mean = lambda X: identity_mean))
             D_in = D_out
 
     def __str__(self):
@@ -20,6 +26,12 @@ class DGP(nn.Module):
         layers_sizes.extend([str(node.D_out) for node in self.layers])
         sizes_str = "-".join(layers_sizes)
         return f"DGP-{sizes_str}"
+
+    def set_kernel_prior(self, sigma_prior, alpha_prior, kernel):
+        ## only allow same prior per layer so far
+        for node in self.layers:
+            node.kernel = kernel(self.D_out, sigma_prior = sigma_prior,
+                                 alpha_prior = alpha_prior)
 
     def forward(self, X, y = None):
         f_l = X.t()
