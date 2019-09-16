@@ -12,6 +12,7 @@ class DGP(nn.Module):
                  sigma_prior = dist.Uniform(1., 2),
                  alpha_prior = dist.Uniform(0.25, 0.75)):
         super(DGP, self).__init__()
+        self.layers_sizes = layers_sizes
         self.layers = nn.ModuleList([])
         for D_out in layers_sizes:
             self.layers.append(SGPR(D_in, M = M,
@@ -29,8 +30,8 @@ class DGP(nn.Module):
 
     def set_kernel_prior(self, sigma_prior, alpha_prior, kernel):
         ## only allow same prior per layer so far
-        for node in self.layers:
-            node.kernel = kernel(self.D_out, sigma_prior = sigma_prior,
+        for node, D_out in zip(self.layers, self.layers_sizes):
+            node.kernel = kernel(D_out, sigma_prior = sigma_prior,
                                  alpha_prior = alpha_prior)
 
     def forward(self, X, y = None):
