@@ -38,10 +38,16 @@ class FlowGP(DGP):
 
     def set_kernel_prior(self, sigma_f_prior, alpha_f_prior,
                          sigma_g_prior, alpha_g_prior, kernel):
+        self.reset()
         self.f.kernel = kernel(self.D_in, sigma_prior = sigma_f_prior,
                                alpha_prior = alpha_f_prior)
         self.g.kernel = kernel(self.D_out, sigma_prior = sigma_g_prior,
                                alpha_prior = alpha_g_prior)
+
+    def reset(self):
+        self.f.reset()
+        self.g.reset()
+
     def get_noise(self):
         return self.g.noise_std
 

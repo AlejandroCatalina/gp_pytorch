@@ -28,8 +28,13 @@ class DGP(nn.Module):
         sizes_str = "-".join(layers_sizes)
         return f"DGP-{sizes_str}"
 
+    def reset(self):
+        for node in self.layers:
+            node.reset()
+
     def set_kernel_prior(self, sigma_prior, alpha_prior, kernel):
         ## only allow same prior per layer so far
+        self.reset()
         for node, D_out in zip(self.layers, self.layers_sizes):
             node.kernel = kernel(D_out, sigma_prior = sigma_prior,
                                  alpha_prior = alpha_prior)

@@ -25,6 +25,12 @@ class SGPR(GPR):
     def __str__(self):
         return f"SGPR-{self.M}"
 
+    def reset(self):
+        self.m = nn.Parameter(normal_(torch.empty(self.D_out, self.M, 1)))
+        self.L = nn.Parameter(torch.stack([torch.abs(torch.randn((1, 1)))
+                                           * torch.eye(self.M) for _ in range(self.D_out)]).tril())
+        self.Z = None
+
     def __init_inducing_points__(self, X):
         N, M = X.shape[0], self.M
         if self.Z is None:
