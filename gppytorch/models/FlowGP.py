@@ -69,8 +69,7 @@ class FlowGP(DGP):
                                       for node in [self.f, self.g]]))
 
     def prior_predictive_check(self, X, sigma_f_bounds, alpha_f_bounds,
-                               sigma_g_bounds, alpha_g_bounds, S = 100,
-                               K = 10):
+                               sigma_g_bounds, alpha_g_bounds, S = 100, K = 10):
         # save kernel
         f_kernel = self.f.kernel
         g_kernel = self.g.kernel
