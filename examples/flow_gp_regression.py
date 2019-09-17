@@ -59,9 +59,10 @@ def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plo
 
 iters = 0
 model = FlowGP(D_in = 1, D_out = 1, T = 2.1, timestep = .3,
-               kernel = SquaredExp, M = 20, mean_g = identity_mean,
-               sigma_f_bounds = [1, 2], alpha_f_bounds = [0.25, 0.5],
-               sigma_g_bounds = [1, 2], alpha_g_bounds = [0.25, 0.5])
+               kernel = SquaredExp, M = 20, mean_f = identity_mean,
+               mean_g = identity_mean, sigma_f_bounds = [1, 2],
+               alpha_f_bounds = [0.25, 0.5], sigma_g_bounds = [1, 2],
+               alpha_g_bounds = [0.25, 0.5])
 
 ## double check that the model is running on the GPU
 if torch.cuda.is_available():
@@ -74,8 +75,8 @@ train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 10,
 train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 10,
       lr = 1e-1, plot = False, plot_every = 100, K = 50)
 posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
-
 visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, f"../{model}-30.pdf")
+
 train(model, x, y_noisy, y = y, x_test = x_test_, n_iters = 500,
       lr = 1e-2, plot = False, plot_every = 100, K = 50)
 posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
