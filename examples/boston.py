@@ -1,10 +1,14 @@
-from sklearn.datasets import load_boston
-from gppytorch.models import FlowGP, SGPR
+import random
+
+import numpy as np
+import torch
+
 from gppytorch.kernels import SquaredExp
 from gppytorch.losses import elbo
+from gppytorch.models import SGPR, FlowGP
+from gppytorch.utils import identity_mean
 from gppytorch.visualize import visualize1d as visualize
-import torch
-import random
+from sklearn.datasets import load_boston
 
 torch.manual_seed(280219)
 boston = load_boston()
@@ -35,7 +39,7 @@ def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plo
         nmll = -elbo(model, x, y_noisy, K = K)
         nmll.backward()
         opt.step()
-        nmlls.append(-nmll.item)
+        nmlls.append(-nmll.item())
         print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()} ")
         if plot and y is not None and x_test is not None and not iter % 250:
             posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
@@ -43,8 +47,12 @@ def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plo
     return nmlls
 
 
-model = FlowGP(D_in = D, D_out = 1, T = 5, timestep = .5, kernel = SquaredExp, M = 20)
-train(model, X_train, y_train, n_iters = 500, lr = 1e-1)
+model = FlowGP(D_in = D, D_out = 1, T = 5, timestep = .2, kernel = SquaredExp, M = 50,
+               sigma_f_bounds = [.1, .2], alpha_f_bounds = [0.25, 0.75],
+               sigma_g_bounds = [.1, .2], alpha_g_bounds = [0.25, 0.75],
+               mean_g = identity_mean)
+
+train(model, X_train, y_train, n_iters = 500, lr = 1e-1, K = 50)
 posterior_mean, posterior_var = model.predict(X_test, full_cov=False)
 print(torch.mean((y_test - posterior_mean)**2) * y_std)
 
