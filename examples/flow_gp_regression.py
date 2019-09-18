@@ -46,18 +46,18 @@ y_noisy_ = (y_noisy - y_noisy.mean()) / y_noisy.std()
 y_ = (y - y.mean()) / y.std()
 
 def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plot = False, plot_every = 250, K = 1):
-	# optimize log marginal likelihood
-	opt = torch.optim.Adam(model.parameters(), lr=lr)
-	# training loop
-	for iter in range(n_iters):
-		opt.zero_grad()
-		nmll = -elbo(model, x, y_noisy, K = K)
-		nmll.backward()
-		opt.step()
-		print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()}")
-		if plot and y is not None and x_test is not None and not iter % plot_every:
-			posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
-			visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, f"../{model}-{iter}.pdf")
+    # optimize log marginal likelihood
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    # training loop
+    for iter in range(n_iters):
+        opt.zero_grad()
+        nmll = -elbo(model, x, y_noisy, K = K)
+        nmll.backward()
+        opt.step()
+        print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()}")
+        if plot and y is not None and x_test is not None and not iter % plot_every:
+            posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
+            visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, f"../{model}-{iter}.pdf")
 
 iters = 0
 model = FlowGP(D_in = 1, D_out = 1, T = 5.0, timestep = .2,
