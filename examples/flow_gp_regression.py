@@ -59,17 +59,18 @@ def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plo
             posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
             visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, f"../{model}-{iter}.pdf")
 
-iters = 0
+sigma_prior = dist.Uniform(1, 2)
+alpha_prior = dist.Uniform(1, 2)
 model = FlowGP(D_in = 1, D_out = 1, T = 5.0, timestep = .2,
-               kernel = SquaredExp, M = 20, sigma_f_bounds = [.1, .2],
-               alpha_f_bounds = [0.25, 0.75], sigma_g_bounds = [.1, .2],
-               alpha_g_bounds = [0.25, 0.75], mean_g = identity_mean)
+               kernel = SquaredExp, M = 20, sigma_f_prior = sigma_prior,
+               alpha_f_prior = alpha_prior, sigma_g_prior = sigma_prior,
+               alpha_g_prior = alpha_prior, mean_g = identity_mean)
 
 ## double check that the model is running on the GPU
 if torch.cuda.is_available():
     model.cuda()
 
-train(model, x_, y_noisy_, y = y_, x_test = x_, n_iters = 100,
-      lr = 1e-1, plot = True, plot_every = 10, K = 50)
+train(model, x_, y_noisy_, y = y_, x_test = x_, n_iters = 250,
+      lr = 1e-1, plot = True, plot_every = 50, K = 50)
 posterior_mean, posterior_var = model.predict(x_, full_cov=False)
-visualize(x_, y_, y_noisy_, x_, posterior_mean, posterior_var, f"../{model}.pdf")
+visualize(x_, y_, y_noisy_, x_, posterior_mean, posterior_var, f"../{model}-250.pdf")
