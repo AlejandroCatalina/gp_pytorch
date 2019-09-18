@@ -1,4 +1,7 @@
 import torch
 
-identity_mean = lambda X: torch.mean(X, dim = 1, keepdim = True)
-zero_mean = lambda X: 0
+def identity_mean(X):
+    return torch.mean(X, dim = 1, keepdim = True)
+
+def zero_mean(X):
+    return 0

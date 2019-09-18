@@ -2,8 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn.init import uniform_
-
-log1pe = lambda x: torch.log(1 + torch.exp(x))
+from gppytorch.utils.transforms import log1pe
 
 class SquaredExp(nn.Module):
     def __init__(self, D_out, sigma_lower_bound = -2.5, sigma_upper_bound = -1.5,
