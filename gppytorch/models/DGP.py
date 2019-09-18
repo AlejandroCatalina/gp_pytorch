@@ -2,8 +2,10 @@ import math
 
 import torch
 import torch.nn as nn
-from gppytorch.models import SGPR
 from torch import distributions as dist
+
+from gppytorch.models import SGPR
+from gppytorch.utils.transforms import log1pe
 
 
 class DGP(nn.Module):
@@ -37,8 +39,6 @@ class DGP(nn.Module):
         return self.layers[-1].noise_std
 
     def neg_log_lik(self, X, y, K = 1):
-        N = X.shape[0]
-
         # draw K samples from the DGP posterior approximation
         f_l, cov_l = [], []
         for _ in range(K):
@@ -49,12 +49,15 @@ class DGP(nn.Module):
         # f_L has shape (K, N, 1), cov_L has shape (K, N, N)
         f_L = torch.stack(f_l)
         cov_L = torch.stack(cov_l).squeeze(1)
+        var_L = torch.stack([torch.diag(c).reshape(-1, self.g.D_out)
+                             for c in cov_L])
 
-        noise_std = self.get_noise()
-        S = noise_std ** 2 * torch.eye(N)
-        return (- 0.5 * ((y - f_L).transpose(1, 2) @ S.inverse() @ (y - f_L)).squeeze()
-                - N / (2 * noise_std ** 2) * torch.einsum('kii', cov_L)
-                - 0.5 * N * torch.log(2 * torch.tensor(math.pi))).mean()
+        noise = log1pe(self.get_noise())
+
+        # mean over K and N
+        return (- 0.5 * torch.log(2 * torch.tensor(math.pi))
+                - 0.5 * torch.log(noise**2)
+                - 0.5 * ((y - f_L) ** 2 + var_L) / noise**2).mean(axis = 0).mean()
 
     def KL(self):
         return torch.sum(torch.stack([node.KL().sum() for node in self.layers]))

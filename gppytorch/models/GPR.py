@@ -3,9 +3,10 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.nn.init import uniform_, normal_
+from torch.nn.init import normal_, uniform_
 
 from gppytorch.kernels import SquaredExp
+from gppytorch.utils.transforms import log1pe
 
 
 class GPR(nn.Module):
@@ -13,7 +14,7 @@ class GPR(nn.Module):
         super(GPR, self).__init__()
         self.kernel = kernel
         self.D_out = D_out
-        self.noise_std = nn.Parameter(torch.exp(uniform_(torch.empty(D_out, 1), -6., -4.)))
+        self.noise_std = nn.Parameter(torch.tensor(1.))
 
     def forward(self, X, y):
         N, _ = X.shape
@@ -33,10 +34,11 @@ class GPR(nn.Module):
     def neg_log_lik(self, X, y, K = None):
         N = X.shape[0]
         mu, cov = self.forward(X, y)
-        S = self.noise_std ** 2 * torch.eye(N)
+        noise = log1pe(self.noise_std)
+        S = noise_std ** 2 * torch.eye(N)
 
         return (- 0.5 * ( (y - mu).transpose(1, 2) @ S.inverse() @ (y - mu) ).squeeze()
-                - N / (2 * self.noise_std ** 2) * torch.einsum('kii', cov).squeeze()
+                - N / (2 * noise_std ** 2) * torch.einsum('kii', cov).squeeze()
                 - 0.5 * N * torch.log(2 * torch.tensor(math.pi)))
 
     def KL(self):
@@ -74,4 +76,3 @@ class GPR(nn.Module):
         # restore kernel
         self.kernel = kernel
         return predictions
-
