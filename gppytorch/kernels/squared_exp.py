@@ -3,8 +3,7 @@ import torch
 import torch.nn as nn
 from torch import distributions as dist
 from torch.nn.init import uniform_
-
-log1pe = lambda x: torch.log(1 + torch.exp(x))
+from gppytorch.utils.transforms import log1pe
 
 class SquaredExp(nn.Module):
     def __init__(self, D_out, sigma_prior = dist.Uniform(1., 2.),

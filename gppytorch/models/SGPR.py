@@ -1,10 +1,13 @@
-import numpy as np
 import math
+
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn.init import normal_, uniform_
 
 from gppytorch.models import GPR
+from gppytorch.utils.transforms import log1pe
+
 
 class SGPR(GPR):
     def __init__(self, D_in, M = 10, kernel = None, D_out = 1, Z = None, mean = lambda X: 0):
@@ -71,17 +74,31 @@ class SGPR(GPR):
 
         return self.mean(X) + mu, cov
 
+    # def neg_log_lik(self, X, y, K = None):
+    #     N = X.shape[0]
+    #     mu, cov = self.forward(X, y)
+    #     S = self.noise_std ** 2 * torch.eye(N)
+
+    #     # remove last dimension and get [N, D_out]
+    #     mu = mu.squeeze(-1).t()
+    #     return (- 0.5 * (y - mu).t() @ S.inverse() @ (y - mu)
+    #             - N / (2 * self.noise_std ** 2) * torch.einsum('kii', cov)
+    #             - 0.5 * N * torch.log(2 * torch.tensor(math.pi)))
+
     def neg_log_lik(self, X, y, K = None):
-        N = X.shape[0]
+        N, _ = X.shape
         mu, cov = self.forward(X, y)
-        S = self.noise_std ** 2 * torch.eye(N)
+        var = torch.stack([torch.diag(c).reshape((-1, self.D_out)) for c in cov])
 
-        # remove last dimension and get [N, D_out]
+        # shape [N, D_out]
+        var = var.squeeze(-1).t()
         mu = mu.squeeze(-1).t()
-        return (- 0.5 * (y - mu).t() @ S.inverse() @ (y - mu)
-                - N / (2 * self.noise_std ** 2) * torch.einsum('kii', cov)
-                - 0.5 * N * torch.log(2 * torch.tensor(math.pi)))
 
+        noise = log1pe(self.noise_std)
+
+        return (- 0.5 * torch.log(2 * torch.tensor(math.pi))
+                - 0.5 * torch.log(noise**2)
+                - 0.5 * ((y - mu) ** 2 + var) / noise**2).mean()
 
     def KL(self):
         return self.kl_multivariate_normal(self.m, self.L,
