@@ -61,7 +61,7 @@ def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plo
 
 sigma_prior = dist.Uniform(1, 2)
 alpha_prior = dist.Uniform(1, 2)
-model = FlowGP(D_in = 1, D_out = 1, T = 5.0, timestep = .2,
+model = FlowGP(D_in = 1, D_out = 1, T = 2.1, timestep = .3,
                kernel = SquaredExp, M = 20, sigma_f_prior = sigma_prior,
                alpha_f_prior = alpha_prior, sigma_g_prior = sigma_prior,
                alpha_g_prior = alpha_prior, mean_g = identity_mean)
@@ -70,7 +70,7 @@ model = FlowGP(D_in = 1, D_out = 1, T = 5.0, timestep = .2,
 if torch.cuda.is_available():
     model.cuda()
 
-train(model, x_, y_noisy_, y = y_, x_test = x_, n_iters = 250,
+train(model, x, y_noisy, y = y, x_test = x, n_iters = 250,
       lr = 1e-1, plot = True, plot_every = 50, K = 50)
 posterior_mean, posterior_var = model.predict(x_, full_cov=False)
 visualize(x_, y_, y_noisy_, x_, posterior_mean, posterior_var, f"../{model}-250.pdf")
