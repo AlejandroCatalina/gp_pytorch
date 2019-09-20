@@ -54,7 +54,7 @@ def train(model, x, y_noisy, y = None, x_test = None, n_iters=50, lr = 1e-3, plo
         nmll = -elbo(model, x, y_noisy, K = K)
         nmll.backward()
         opt.step()
-        print(f"Iter {iter} , Log marginal likelihood : {-nmll.item()} ")
+        print(f"Iter {iter}, log marginal likelihood: {-nmll.item()}")
         if plot and y is not None and x_test is not None and not iter % plot_every:
             posterior_mean, posterior_var = model.predict(x_test, full_cov=False)
             visualize(x, y, y_noisy, x_test, posterior_mean, posterior_var, f"../{model}-{iter}.pdf")
@@ -69,11 +69,13 @@ train(model, x_, y_noisy_, y = y_, x_test = x_, n_iters = 2500, lr = 1e-1, plot 
 posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
 visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, "../DGP-2500.pdf")
 
+sigma_prior = dist.Uniform(1, 2)
+alpha_prior = dist.Uniform(1, 2)
 model = FlowGP(D_in = 1, D_out = 1, T = 2.1, timestep = .3,
-               kernel = SquaredExp, M = 20, mean_g = identity_mean,
-               sigma_f_bounds = [1, 2], alpha_f_bounds = [1, 2],
-               sigma_g_bounds = [1, 2], alpha_g_bounds = [1, 2])
-train(model, x_, y_noisy_, y = y_, x_test = x_, n_iters = 250,
+               kernel = SquaredExp, M = 20, sigma_f_prior = sigma_prior,
+               alpha_f_prior = alpha_prior, sigma_g_prior = sigma_prior,
+               alpha_g_prior = alpha_prior, mean_g = identity_mean)
+train(model, x_, y_noisy_, y = y_, x_test = x_, n_iters = 500,
       lr = 1e-1, plot = True, plot_every = 50, K = 50)
 posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
 visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, f"../{model}-250.pdf")
