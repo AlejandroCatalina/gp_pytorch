@@ -76,6 +76,6 @@ model = FlowGP(D_in = 1, D_out = 1, T = 2.1, timestep = .3,
                alpha_f_prior = alpha_prior, sigma_g_prior = sigma_prior,
                alpha_g_prior = alpha_prior, mean_g = identity_mean)
 train(model, x_, y_noisy_, y = y_, x_test = x_, n_iters = 500,
-      lr = 1e-1, plot = True, plot_every = 50, K = 50)
+      lr = 1e-1, plot = True, plot_every = 50, K = 5)
 posterior_mean, posterior_var = model.predict(x_test_, full_cov=False)
 visualize(x, y, y_noisy, x_test_, posterior_mean, posterior_var, f"../{model}-250.pdf")

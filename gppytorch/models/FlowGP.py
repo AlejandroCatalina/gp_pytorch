@@ -4,7 +4,8 @@ from torch import distributions as dist
 from gppytorch.models import DGP
 from gppytorch.models import SGPR
 from gppytorch.kernels import SquaredExp
-from gppytorch.utils import zero_mean, identity_mean
+from gppytorch.utils.mean_functions import zero_mean, identity_mean
+from gppytorch.utils.transforms import log1pe
 
 
 class FlowGP(DGP):
