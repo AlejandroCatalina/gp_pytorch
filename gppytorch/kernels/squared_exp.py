@@ -1,17 +1,16 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from torch import distributions as dist
 from torch.nn.init import uniform_
 from gppytorch.utils.transforms import log1pe
 
 class SquaredExp(nn.Module):
-    def __init__(self, D_out, sigma_lower_bound = -2.5, sigma_upper_bound = -1.5,
-                 alpha_lower_bound = 0.5, alpha_upper_bound = 0.75):
+    def __init__(self, D_out, sigma_prior = dist.Uniform(1., 2.),
+                 alpha_prior = dist.Uniform(1., 2.)):
         super(SquaredExp, self).__init__()
-        self.sigma = nn.Parameter(uniform_(torch.empty(D_out, 1, 1),
-                                           sigma_lower_bound, sigma_upper_bound))
-        self.alpha = nn.Parameter(uniform_(torch.empty(D_out, 1, 1),
-                                           alpha_lower_bound, alpha_upper_bound))
+        self.sigma = nn.Parameter(sigma_prior.sample(sample_shape = (1, 1)))
+        self.alpha = nn.Parameter(alpha_prior.sample(sample_shape = (1, 1)))
 
     def forward(self, X, Z):
         gamma = log1pe(self.sigma)

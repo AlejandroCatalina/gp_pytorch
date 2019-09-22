@@ -35,10 +35,10 @@ class GPR(nn.Module):
         N = X.shape[0]
         mu, cov = self.forward(X, y)
         noise = log1pe(self.noise_std)
-        S = noise_std ** 2 * torch.eye(N)
+        S = noise ** 2 * torch.eye(N)
 
         return (- 0.5 * ( (y - mu).transpose(1, 2) @ S.inverse() @ (y - mu) ).squeeze()
-                - N / (2 * noise_std ** 2) * torch.einsum('kii', cov).squeeze()
+                - N / (2 * noise ** 2) * torch.einsum('kii', cov).squeeze()
                 - 0.5 * N * torch.log(2 * torch.tensor(math.pi)))
 
     def KL(self):
@@ -47,6 +47,7 @@ class GPR(nn.Module):
     def predict(self, X_test, full_cov = True):
         N = X_test.shape[0]
         X, Kxx_inv = self.X, self.Kxx_inv
+        noise = log1pe(self.noise_std)
 
         Ks = self.kernel(X_test.unsqueeze(0).repeat(self.D_out, 1, 1),
                          X.unsqueeze(0).repeat(self.D_out, 1, 1)) + 1e-3 * torch.eye(N)
@@ -54,7 +55,7 @@ class GPR(nn.Module):
                           X_test.unsqueeze(0).repeat(self.D_out, 1, 1)) + 1e-3 * torch.eye(N)
 
         mu = ( Ks.transpose(1, 2) @ Kxx_inv @ y ).squeeze().reshape(-1, 1)
-        cov = (Ks + self.noise_std * torch.eye(N)
+        cov = (Ks + noise * torch.eye(N)
                - Ks.transpose(1, 2) @ Kxx_inv @ Ks).squeeze()
         if not full_cov:
             return mu, cov.diag().sqrt()

@@ -28,6 +28,12 @@ class SGPR(GPR):
     def __str__(self):
         return f"SGPR-{self.M}"
 
+    def reset(self):
+        self.m = nn.Parameter(normal_(torch.empty(self.D_out, self.M, 1)))
+        self.L = nn.Parameter(torch.stack([torch.abs(torch.randn((1, 1)))
+                                           * torch.eye(self.M) for _ in range(self.D_out)]).tril())
+        self.Z = None
+
     def __init_inducing_points__(self, X):
         N, M = X.shape[0], self.M
         if self.Z is None:
@@ -67,17 +73,6 @@ class SGPR(GPR):
         cov = Knn + A @ (S - Kmm) @ A.transpose(1, 2)
 
         return self.mean(X) + mu, cov
-
-    # def neg_log_lik(self, X, y, K = None):
-    #     N = X.shape[0]
-    #     mu, cov = self.forward(X, y)
-    #     S = self.noise_std ** 2 * torch.eye(N)
-
-    #     # remove last dimension and get [N, D_out]
-    #     mu = mu.squeeze(-1).t()
-    #     return (- 0.5 * (y - mu).t() @ S.inverse() @ (y - mu)
-    #             - N / (2 * self.noise_std ** 2) * torch.einsum('kii', cov)
-    #             - 0.5 * N * torch.log(2 * torch.tensor(math.pi)))
 
     def neg_log_lik(self, X, y, K = None):
         N, _ = X.shape
