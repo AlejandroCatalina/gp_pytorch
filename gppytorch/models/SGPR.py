@@ -22,16 +22,14 @@ class SGPR(GPR):
         else:
             self.Z = None
         self.m = nn.Parameter(normal_(torch.empty(D_out, self.M, 1)))
-        self.L = nn.Parameter(torch.stack([torch.abs(torch.randn((1, 1)))
-                                           * torch.eye(M) for _ in range(self.D_out)]).tril())
+        self.L = nn.Parameter(torch.stack([torch.eye(M) for _ in range(self.D_out)]).tril())
 
     def __str__(self):
         return f"SGPR-{self.M}"
 
     def reset(self):
         self.m = nn.Parameter(normal_(torch.empty(self.D_out, self.M, 1)))
-        self.L = nn.Parameter(torch.stack([torch.abs(torch.randn((1, 1)))
-                                           * torch.eye(self.M) for _ in range(self.D_out)]).tril())
+        self.L = nn.Parameter(torch.stack([torch.eye(self.M) for _ in range(self.D_out)]).tril())
         self.Z = None
 
     def __init_inducing_points__(self, X):
@@ -67,10 +65,16 @@ class SGPR(GPR):
         Kmm = self.kernel(z, z) + M_noise
         Kmm_inv = Kmm.inverse()
         A = Knm @ Kmm_inv
+
+        # reparameterize S as S + Kmm to avoid negative variances
+        # too high variance results in difficult learning!
         S = self.L.tril() @ self.L.tril().transpose(1, 2)
 
         mu = A @ self.m
         cov = Knn + A @ (S - Kmm) @ A.transpose(1, 2)
+
+        # ugly but functional?
+        cov[cov <= 0] = 1e-6
 
         return self.mean(X) + mu, cov
 
